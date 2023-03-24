@@ -1,0 +1,40 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(readr)
+getwd()
+dd = readRDS("/Users/martin/Documents/GitHub/111-2-interactive-data-visualizations/dashboardInfo.Rds")
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+dd$chartA
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+dd$chartB
+```
+
+### Chart C
+
+```{r}
+
+```
+
