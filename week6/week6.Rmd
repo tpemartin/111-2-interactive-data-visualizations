@@ -150,11 +150,6 @@ plot_ly(x = c(0, 0.5, 1, 2, 2.2), y = c(1.23, 2.5, 0.42, 3, 1), type = 'scatter'
 ## highlight
 
 ```{r}
-getwd() |> print()
-saveRDS(bigMac2, file=file.path(getwd(),"bigMac2.Rds"))
-```
-
-```{r}
 bigMac2$data |>
   highlight_key(~name) -> bigMac2$highlight_byName$all
 
@@ -185,108 +180,19 @@ plot_ly() |>
 bigMac2$highlightLayer$lines
 ```
 
-## assemble
+### Split trace
 
-```{r}
-bigMac2$traces[[1]] |> names() -> attNames
-bigMac2$traces[[1]] |> getAttributeListPairs(attNames)
-bigMac2$traces[[2]] |> names() -> attNames
-bigMac2$traces[[2]] |> getAttributeListPairs(attNames)
-plot_ly() |>
-  add_trace(
-    x = bigMac2$traces[[1]]$x,
-    y = bigMac2$traces[[1]]$y,
-    # text = bigMac2$traces[[1]]$text,
-    type = bigMac2$traces[[1]]$type,
-    mode = bigMac2$traces[[1]]$mode,
-    marker = bigMac2$traces[[1]]$marker,
-    # hoveron = bigMac2$traces[[1]]$hoveron,
-    name = bigMac2$traces[[1]]$name,
-    legendgroup = bigMac2$traces[[1]]$legendgroup,
-    showlegend = bigMac2$traces[[1]]$showlegend,
-    xaxis = bigMac2$traces[[1]]$xaxis,
-    yaxis = bigMac2$traces[[1]]$yaxis,
-    hoverinfo = "skip"
-    # frame = bigMac2$traces[[1]]$frame
-  ) |>
-  add_trace(
-    x = bigMac2$traces[[2]]$x,
-    y = bigMac2$traces[[2]]$y,
-    # text = bigMac2$traces[[2]]$text,
-    type = bigMac2$traces[[2]]$type,
-    mode = bigMac2$traces[[2]]$mode,
-    marker = bigMac2$traces[[2]]$marker,
-    # hoveron = bigMac2$traces[[2]]$hoveron,
-    name = bigMac2$traces[[2]]$name,
-    legendgroup = bigMac2$traces[[2]]$legendgroup,
-    showlegend = bigMac2$traces[[2]]$showlegend,
-    xaxis = bigMac2$traces[[2]]$xaxis,
-    yaxis = bigMac2$traces[[2]]$yaxis,
-    hoverinfo = "skip"
-    # frame = bigMac2$traces[[2]]$frame
-  )  |>
-  add_trace(
-    data = bigMac2$highlight_byName$all,
-    x=~date, y=~USD,
-    text=~name,
-    # x = bigMac2$traces[[4]]$x,
-    # y = bigMac2$traces[[4]]$y,
-    #text = bigMac2$traces[[4]]$text,
-    type = bigMac2$traces[[4]]$type,
-    mode = bigMac2$traces[[4]]$mode,
-    line = bigMac2$traces[[4]]$line,
-    hoveron = bigMac2$traces[[4]]$hoveron,
-    showlegend = bigMac2$traces[[4]]$showlegend,
-    xaxis = bigMac2$traces[[4]]$xaxis,
-    yaxis = bigMac2$traces[[4]]$yaxis,
-    hoverinfo = "skip"
-    # frame = bigMac2$traces[[4]]$frame
-  ) |> 
-  highlight(on="plotly_click", off="plotly_doubleclick") |>
-  config(displayModeBar=FALSE) -> p0
-```
-
-```{r}
-
-plot_ly() |>
-  add_trace(
-    data=bigMac2$data |> dplyr::select(date, USD) |> dplyr::mutate(overValue=USD>0),
-    x=~date, y=~USD, color=~overValue,
-    hoverinfo="skip"
-  ) |>
-  config(
-    staticPlot=T
-  ) |>
-  add_trace(
-    data = bigMac2$highlight_byName$all,
-    x=~date, y=~USD,
-    text=~name,
-    # x = bigMac2$traces[[4]]$x,
-    # y = bigMac2$traces[[4]]$y,
-    #text = bigMac2$traces[[4]]$text,
-    type = bigMac2$traces[[4]]$type,
-    mode = bigMac2$traces[[4]]$mode,
-    line = bigMac2$traces[[4]]$line,
-    hoveron = bigMac2$traces[[4]]$hoveron,
-    showlegend = bigMac2$traces[[4]]$showlegend,
-    xaxis = bigMac2$traces[[4]]$xaxis,
-    yaxis = bigMac2$traces[[4]]$yaxis,
-    hoverinfo = bigMac2$traces[[4]]$hoverinfo,
-    frame = bigMac2$traces[[4]]$frame
-  ) |> 
-  highlight(color="black", on="plotly_hover")
-
-```
+`add_trace` can create more traces with `split` setup.
 
 # Analyzing Big Mac
 
-![](bigMac.png){style="width: 50%"}
+![](bigMac.png){width="70%"}
 
 ## Chart C
 
-![Big Mac Interaction](bigmac_chart_c.png){width="50%"}
+![Big Mac Interaction](bigmac_chart_c.png){width="70%"}
 
--    Only the click-highlighted (dark blue) and the hovered grey lines are drawn.
+-   Only the click-highlighted (dark blue) and the hovered grey lines are drawn.
 
 Two events are attached to points
 
@@ -296,7 +202,7 @@ Two events are attached to points
 
 ## Plotly highlight
 
-![Plotly highlight](plotly_highlight.png){style="width: 50%"}
+![Plotly highlight](plotly_highlight.png){width="70%"}
 
 -   Two events are attached
 
@@ -322,11 +228,16 @@ Plotly widget (meaning the element on .html file) fires many events. A lot of th
 
 We need to know that information the corresponding event can pass to us.
 
+First save what we have
+
+```{r}
+saveRDS(bigMac2, "bigMac2.Rds")
+```
+
 We can place the following code in the dashboard:
 
 ```{r}
-pj = rstudioapi::getActiveProject()
-bigMac2 = readRDS(file.path(pj,"week6/bigMac2.Rds"))
+bigMac2 = readRDS("bigMac2.Rds")
 
 bigMac2$highlightLayer$lines |> 
   htmlwidgets::onRender("function(e){plt=e;}")
@@ -366,6 +277,23 @@ plt.on('plotly event', event handler)
 
     -   `console.log(e)` will print the value of object `e` in the console window.
 
+## Chrome sources snippet
+
+![Sources/snippets](script_snippet.png)
+
 ### Plotly hover event
 
 -   [plotly hover event](https://plotly.com/javascript/plotlyjs-events/#hover-event)
+
+Put this under the snippet and save (ctrl+S, or cmd+S).
+
+``` javascript
+//js
+plt.on('plotly_hover', function(e){
+    console.log(e)
+})
+```
+
+Run it and do a hover action, you will see hover event shown in the console. You can right click the console information and **store it as global variable** for experiment.
+
+![store as global variable](store_as_global_variable.png)
