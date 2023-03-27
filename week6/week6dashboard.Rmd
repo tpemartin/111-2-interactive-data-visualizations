@@ -17,9 +17,27 @@ Column {data-width=650}
 
 ### Chart A
 
+```{r eval=FALSE, include=FALSE}
+bigMac2$highlightLayer$lines |> 
+  htmlwidgets::onRender("function(e){
+  plt = e;
+  temp1 = document.getElementById('mydiv')
+
+  plt.on('plotly_hover', function(e){
+      //console.log(e)
+      let temp2 = e
+      let countryname = temp2.points[0].data.name
+      console.log(countryname)
+
+      temp1.innerText = countryname
+  })
+}
+")
+```
+
 ```{r}
 bigMac2$highlightLayer$lines |> 
-  htmlwidgets::onRender("function(e){plt=e;}")
+  htmlwidgets::onRender(readLines("js/myhandler.js"))
 ```
 
 Column {data-width=350}
