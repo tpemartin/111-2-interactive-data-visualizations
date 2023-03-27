@@ -1,0 +1,40 @@
+---
+title: "week 6 dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+pj = rstudioapi::getActiveProject()
+bigMac2 = readRDS(file.path(pj,"week6/bigMac2.Rds"))
+
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+bigMac2$highlightLayer$lines |> 
+  htmlwidgets::onRender("function(e){plt=e;}")
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
