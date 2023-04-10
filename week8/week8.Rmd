@@ -103,6 +103,37 @@ Filter and highlight are actually provided by **crosstalk** package which **plot
 
 -   [using crosstalk](https://rstudio.github.io/crosstalk/using.html)
 
+## crosstalk::SharedData
+
+```{r}
+bigMacData$allYearsWithNA |> plotly::highlight_key(~name, group="bigMac")
+```
+
+is the same as
+
+```{r}
+bigMacData$allYearsWithNA |> crosstalk::SharedData$new(~name, group="bigMac")
+```
+
+## Fix range
+
+If you decide to use crosstalk::filter, you must do something like
+
+```{r}
+layout(
+      yaxis=list(
+        fixedrange=T, # stop y being zoomable.
+        range=list(-1,2) # set fixed range even after each filter re-drawals.
+      )
+    )
+```
+
+# R's web ecosystem
+
+js package =\> htmlwidgets =\> R package
+
+R package support crosstalk, follow crosstalk's standardization setup.
+
 ## Selectize.js
 
 `crosstalk::filter_xxx` uses **selectize.js** which can be accessed through the DOM's selectize interface.
