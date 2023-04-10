@@ -85,6 +85,16 @@ plot_ly() |>
       )
     ```
 
+# WebGL
+
+<https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API>
+
+In plotly, simply set `type = "scattergl"` in your trace.
+
+# Two separate highlight
+
+-   Give different `group` name in `plotly::highlight_key`.
+
 # Filter
 
 Compared to **highlight** which dim non-selected traces and highlighted the selected trace, **filter** clears the graph and shows only the filtered data.
