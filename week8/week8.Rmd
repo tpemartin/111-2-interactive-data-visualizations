@@ -8,15 +8,93 @@ date: "2023-04-02"
 knitr::opts_chunk$set(echo = TRUE, eval=F)
 ```
 
+# Path
+
+-   absolute path: `C:\...`
+
+-   relative path: relative to project folder
+
+    -   "./": project root
+
+    -   "../": one level of parent folder up relative to the current file that uses the specification.
+
+        -   week8.R in week8/. Its one level of parent folder up is `111-2-interactive-data-visualization`
+
+# econIDV
+
+```{r}
+plot_ly() |>
+    do_add_trace(traces[[1]]) |>
+    do_add_trace(traces[[2]]) |>
+    do_add_trace(traces[[4]]) 
+```
+
+-   Select `traces[[1]]` and copy (to your clipboard)
+
+-   Addins \> econIDV: get name=value pairs from a list
+
+    ```{r}
+    plot_ly() |>
+      add_trace(
+        # paste
+        x = traces[[1]]$x,
+        y = traces[[1]]$y,
+        text = traces[[1]]$text,
+        type = traces[[1]]$type,
+        mode = traces[[1]]$mode,
+        marker = traces[[1]]$marker,
+        hoveron = traces[[1]]$hoveron,
+        name = traces[[1]]$name,
+        legendgroup = traces[[1]]$legendgroup,
+        showlegend = traces[[1]]$showlegend,
+        xaxis = traces[[1]]$xaxis,
+        yaxis = traces[[1]]$yaxis,
+        hoverinfo = traces[[1]]$hoverinfo,
+        frame = traces[[1]]$frame
+      ) |>
+      add_trace(
+        # paste
+        x = traces[[2]]$x,
+        y = traces[[2]]$y,
+        text = traces[[2]]$text,
+        type = traces[[2]]$type,
+        mode = traces[[2]]$mode,
+        marker = traces[[2]]$marker,
+        hoveron = traces[[2]]$hoveron,
+        name = traces[[2]]$name,
+        legendgroup = traces[[2]]$legendgroup,
+        showlegend = traces[[2]]$showlegend,
+        xaxis = traces[[2]]$xaxis,
+        yaxis = traces[[2]]$yaxis,
+        hoverinfo = traces[[2]]$hoverinfo,
+        frame = traces[[2]]$frame
+      ) |>
+      add_trace(
+        x = traces[[4]]$x,
+        y = traces[[4]]$y,
+        text = traces[[4]]$text,
+        type = traces[[4]]$type,
+        mode = traces[[4]]$mode,
+        line = traces[[4]]$line,
+        hoveron = traces[[4]]$hoveron,
+        showlegend = traces[[4]]$showlegend,
+        xaxis = traces[[4]]$xaxis,
+        yaxis = traces[[4]]$yaxis,
+        hoverinfo = traces[[4]]$hoverinfo,
+        frame = traces[[4]]$frame
+      )
+    ```
+
 # Filter
 
-Compared to **highlight** which dim non-selected traces and highlighted the selected trace, **filter** clears the graph and shows only the filtered data. 
+Compared to **highlight** which dim non-selected traces and highlighted the selected trace, **filter** clears the graph and shows only the filtered data.
 
 Filter and highlight are actually provided by **crosstalk** package which **plotly** take advantage of its **filter and selection** functions.
 
-  * [using crosstalk](https://rstudio.github.io/crosstalk/using.html)
+-   [using crosstalk](https://rstudio.github.io/crosstalk/using.html)
 
 ## Selectize.js
+
 `crosstalk::filter_xxx` uses **selectize.js** which can be accessed through the DOM's selectize interface.
 
 ```{js}
