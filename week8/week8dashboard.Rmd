@@ -19,7 +19,11 @@ Column {data-width=150}
 ### Chart A
 
 ```{r}
-crosstalk::filter_select(id="country","country",bigMacData$allYearsWithNA |> plotly::highlight_key(~name, group="bigMac"),~name) 
+crosstalk::filter_select(
+  id="country",
+  label="country",
+  bigMacData$allYearsWithNA |> plotly::highlight_key(~name, group="bigMac"),
+  ~name) 
 ```
 
 Column {data-width=350}
