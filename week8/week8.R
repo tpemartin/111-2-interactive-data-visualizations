@@ -193,8 +193,11 @@ bigMacData = new.env()
     )  |>
     layout(
       yaxis=list(
-        fixedrange=T, # stop y being zoomable.
+        # fixedrange=T, # stop y being zoomable.
         range=list(-1,2) # set fixed range even after each filter re-drawals.
+      ),
+      xaxis = list(
+        range=list(lubridate::ymd("2000-04-01"), lubridate::ymd("2022-07-01"))
       )
     ) |>
     hide_legend() |>
