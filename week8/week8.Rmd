@@ -1,0 +1,29 @@
+---
+title: "week8"
+output: html_document
+date: "2023-04-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=F)
+```
+
+# Filter
+
+Compared to **highlight** which dim non-selected traces and highlighted the selected trace, **filter** clears the graph and shows only the filtered data. 
+
+Filter and highlight are actually provided by **crosstalk** package which **plotly** take advantage of its **filter and selection** functions.
+
+  * [using crosstalk](https://rstudio.github.io/crosstalk/using.html)
+
+## Selectize.js
+`crosstalk::filter_xxx` uses **selectize.js** which can be accessed through the DOM's selectize interface.
+
+```{js}
+/* choose all DOM with select tag */
+selectDOM = document.querySelector("#country select")
+
+control = selectDOM.selectize
+
+control.setValue(["Argentina"])
+```

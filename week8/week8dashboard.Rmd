@@ -1,0 +1,39 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+chartC=readRDS("chartC.Rds")
+chartB=readRDS("chartB.Rds")
+bigMacData=readRDS("bigMacData.Rds")
+```
+
+Column {data-width=150}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+crosstalk::filter_select(id="country","country",bigMacData$allYearsWithNA |> plotly::highlight_key(~name, group="bigMac"),~name) 
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+chartB$highlight
+```
+
+### Chart C
+
+```{r}
+chartC$complete$trace4highlight$withScatterGL
+```
+
