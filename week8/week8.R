@@ -1,5 +1,5 @@
 big_mac_raw_index <- readr::read_csv("https://raw.githubusercontent.com/TheEconomist/big-mac-data/master/output-data/big-mac-raw-index.csv")
-bigMac2 = readRDS(normalizePath("../week7/bigMac2.Rds"))
+bigMac2 = readRDS("../week7/bigMac2.Rds")
 bigMac = readRDS("../bigMac.Rds")
 dplyr::glimpse(big_mac_raw_index)
 chartC <- new.env()
@@ -240,13 +240,13 @@ chartB <- new.env()
 ## build --------
 {
   chartB$ggplot |>
-    plotly::ggplotly() ->
+    plotly::ggplotly() |> plotly::plotly_build() ->
   chartB$build
 }
 ## traces ----
 {
-  bigMac <- readRDS("../bigMac.Rds")
-  bigMac$build$`2022-07-01`$x$data |> length()
+  # bigMac <- readRDS("../bigMac.Rds")
+  # bigMac$build$`2022-07-01`$x$data |> length()
   chartB$traces = chartB$build$x$data
 }
 ## do_add_trace check ----
@@ -271,10 +271,11 @@ chartB <- new.env()
     add_segments(
       data=bigMacData$oneYear,
       x = ~name, xend=~name,
-      y = 0, yend= ~USD
+      y = 0, yend= ~USD,
+      type="scattergl"
     ) |>
     add_trace(
-      data = bigMacData$oneYearUSDneg |> plotly::highlight_key(~name, group="bigMac"),
+      data = bigMacData$oneYearUSDneg |> plotly::highlight_key(~name, group="bigMac2"),
       x = ~name,
       y = ~USD,
       text = ~name,
@@ -293,7 +294,7 @@ chartB <- new.env()
       hoverinfo = chartB$traces[[2]]$hoverinfo
     ) |>
     add_trace(
-      data = bigMacData$oneYearUSDPos |> plotly::highlight_key(~name, group="bigMac"),
+      data = bigMacData$oneYearUSDPos |> plotly::highlight_key(~name, group="bigMac2"),
       x = ~name,
       y = ~USD,
       text = ~name,
@@ -321,6 +322,8 @@ chartB <- new.env()
     config(displayModeBar=F) |>
     highlight(
       on="plotly_hover", color="#006ba2") -> chartB$highlight
+
+  chartB$highlight
 }
 
 saveRDS(chartC, file="chartC.Rds")
