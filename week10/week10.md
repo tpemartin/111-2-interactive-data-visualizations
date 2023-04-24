@@ -59,6 +59,18 @@ dropDownMenu <- function(nameList, id) {
 }
 ```
 
+### Dropdown menu events
+
+-   User select a date: use **change** event.
+
+-   Retrieve the date value the user selected.
+
+    ```         
+    var chartBSelect = document.getElementById("plotly-select")
+
+    chartBSelect.value // show the current dropdown value
+    ```
+
 # Datatable
 
 ## style
