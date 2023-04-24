@@ -11,7 +11,7 @@ library(flexdashboard)
 chartC=readRDS("../week9/chartC.Rds")
 chartB=readRDS("./chartB.Rds")
 chartA=readRDS("./chartA.Rds")
-bigMacData=readRDS("../week8/bigMacData.Rds")
+bigMacData=readRDS("./bigMacData.Rds")
 ```
 
 

@@ -1,5 +1,5 @@
-chartBMap = document.getElementById("chartB-tracemap")
-var chartBtracemap = JSON.parse(chartBMap.textContent)
+//chartBMap = document.getElementById("chartB-tracemap")
+//var chartBtracemap = JSON.parse(chartBMap.textContent)
 
 chartCMap = document.getElementById("chartC-tracemap")
 var chartCtracemap = JSON.parse(chartCMap.textContent)
@@ -65,9 +65,22 @@ function chartBredraw(date){
 
 document.addEventListener('DOMContentLoaded', function () {
   // do something here ...
+  // chart B's graph DOM object
   chartBelement = document.getElementById("widget-chartB")
+  // chart B's dropdown menu DOM object
   chartBSelect = document.getElementById("plotly-select")
+  // chart B's dropdown on change, then do chartBredraw
   chartBSelect.onchange=function(){
+    createChartBMapping(chartBdataLayoutConfig[chartBSelect.value].data)
     chartBredraw(chartBSelect.value)
   }
 }, false);
+
+var chartBtracemap = Object();
+function createChartBMapping(chartData){
+  // Object is mutable within a function in JS
+  chartData.map((x, i)=>{
+    chartBtracemap[x.name] = i
+  })
+  // no need to assigned map result to chartBtracemap itself
+}
