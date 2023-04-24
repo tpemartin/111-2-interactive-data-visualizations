@@ -66,5 +66,8 @@ function chartBredraw(date){
 document.addEventListener('DOMContentLoaded', function () {
   // do something here ...
   chartBelement = document.getElementById("widget-chartB")
-
+  plotlySelect = document.getElementById("plotly-select")
+  plotlySelect.onchange=function(){
+    chartBredraw(chartBSelect.value)
+  }
 }, false);
