@@ -55,3 +55,16 @@ function clickHighlight(chart,trace, styleChange){
     )
     return(styleChange)
 }
+
+function chartBredraw(date){
+  Plotly.react(chartBelement,
+             chartBdataLayoutConfig[date].data,
+             chartBdataLayoutConfig[date].layout,
+             chartBdataLayoutConfig[date].config)
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // do something here ...
+  chartBelement = document.getElementById("widget-chartB")
+
+}, false);
