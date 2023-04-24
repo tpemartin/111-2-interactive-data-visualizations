@@ -71,6 +71,10 @@ dropDownMenu <- function(nameList, id) {
     chartBSelect.value // show the current dropdown value
     ```
 
+# Plotly JS
+
+-   <https://plotly.com/javascript/>
+
 # Datatable
 
 ## style
