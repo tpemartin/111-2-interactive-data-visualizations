@@ -5,7 +5,7 @@ chartCMap = document.getElementById("chartC-tracemap")
 var chartCtracemap = JSON.parse(chartCMap.textContent)
 
 chartBxJson = document.getElementById("chartB-x")
-var chartBdataLayoutConfig = JSON.parse(chartBxJson)
+var chartBdataLayoutConfig = JSON.parse(chartBxJson.textContent)
 
 /* chart B */
 originalStyle = {
