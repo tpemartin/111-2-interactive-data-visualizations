@@ -75,6 +75,10 @@ dropDownMenu <- function(nameList, id) {
 
 -   <https://plotly.com/javascript/>
 
+```         
+<div class="datatables html-widget html-fill-item-overflow-hidden html-fill-item" id="widget-chartA" style="width:100%;height:auto;"></div>
+```
+
 # Datatable
 
 ## style

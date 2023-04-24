@@ -82,12 +82,8 @@ saveRDS(chartA, file="chartA.Rds")
 # Chart B ----
 library(plotly)
 
-{
 ## highlight -------
-  {
-    names(bigMacData$splitByDate)
-    date = "2000-04-01"
-
+  getDataLayoutConfig <- function(bigMacData, date, chartB) {
     bigMacData$splitByDate[[date]] -> DFwhole
 
     bigMacData$USDPosNegSplitByDate[[date]]$USDpos -> DFpos
@@ -180,13 +176,21 @@ library(plotly)
         opacityDim = 1,
         color="#a2b0b9") -> p0
     p0
-  }
-}
-## build ----
-{
-  p0 |> plotly::plotly_build() -> buildP0
 
-  chartB$splitByDate[[date]] <- buildP0
+    ## build ----
+
+    p0 |> plotly::plotly_build() -> buildP0
+    buildP0$x[c('data','layout','config')]
+  }
+  {
+    names(bigMacData$splitByDate) |>
+      purrr::map(~{
+        getDataLayoutConfig(bigMacData, .x, chartB)
+      }) |>
+      setNames(names(bigMacData$splitByDate)) -> chartB$allYears
+
+
+    chartB$allYears$`2000-04-01` |> View()
 }
 
 saveRDS(chartB, file="chartB.Rds")
