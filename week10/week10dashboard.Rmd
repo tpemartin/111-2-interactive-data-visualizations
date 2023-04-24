@@ -29,9 +29,9 @@ htmltools::tags$script(
 htmltools::tags$script(
   id="chartB-x",
   type="application/json",
-  chartB$splitByDate$`2000-04-01`$x[c("data", "layout", "config")] |> jsonlite::toJSON(auto_unbox = T)
+  chartB$allYears |> jsonlite::toJSON(auto_unbox = T)
 )
-htmltools::includeScript("../week9/js/helper.js")
+htmltools::includeScript("./js/helper.js")
 ```
 
 
@@ -54,8 +54,12 @@ Column {data-width=350}
 
 ### Chart B
 
-```{r}
+```{r, eval=F}
 htmltools::includeHTML("selection.html")
+```
+
+```{r}
+chartB$dropdownMenu
 ```
 
 ```{r chartB}
