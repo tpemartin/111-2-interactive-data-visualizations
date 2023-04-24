@@ -33,9 +33,29 @@ bigMacData$splitByDate |>
   setNames(names(bigMacData$splitByDate)) -> bigMacData$USDPosNegSplitByDate
 
 ## available dates -----
+dropdownMenu <- function(nameList, id, label) {
+  createOptions = function(.x){ htmltools::tags$option(.x)}
+  nameList |>
+    purrr::map(createOptions) -> listOptions
 
+  library(htmltools)
+  div(class="form-group",
+      tags$label(
+        `for`="exampleSelect2", class="form-label mt-4",
+        label
+      ),
+      tags$select(
+        class="form-select", id=id,
+        listOptions
+      )
+  )
+}
 {
-  bigMacData$splitByDate |> names()
+  bigMacData$splitByDate |> names() |>
+    dropdownMenu(id = "plotly-select", label="Show index at") -> chartB$dropdownMenu
+}
+{
+
 }
 
 saveRDS(bigMacData, file="bigMacData.Rds")
