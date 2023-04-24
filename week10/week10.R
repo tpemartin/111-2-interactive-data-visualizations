@@ -32,6 +32,13 @@ bigMacData$splitByDate |>
   ) |>
   setNames(names(bigMacData$splitByDate)) -> bigMacData$USDPosNegSplitByDate
 
+## available dates -----
+
+{
+  bigMacData$splitByDate |> names()
+}
+
+saveRDS(bigMacData, file="bigMacData.Rds")
 # Chart A ----
 chartA = list()
 {
