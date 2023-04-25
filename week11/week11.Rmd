@@ -26,9 +26,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
     > `var` is either global scoped (can be accessed everywhere in your code) or function scoped (only can be accessed within its associated function body.
 
-```{=html}
-<!-- -->
-```
+## Collective global object
+
+It is good to keep all required global information within an object, say `app` , then use proper interfaces to categorize each information.
+
 -   chartBtracemap: generated each time when plotly draw finishes
     -   has to be in the global environment since other functions access it not as an argument input.
 

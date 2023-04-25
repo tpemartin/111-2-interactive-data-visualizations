@@ -1,7 +1,15 @@
 bigMacData = readRDS("../week10/bigMacData.Rds")
 chartB = readRDS("../week10/chartB.Rds")
 # helper functions
-source("../R/helpers.R")
+source("./R/helpers.R")
+
+# chartB----
+chartB$dropdownMenu = dropdownMenu(names(bigMacData$splitByDate),
+                                   id = "plotly-select",
+                                   label = "Show index at",
+                                   selectedDate = "2022-07-01")
+
+saveRDS(chartB, file="chartB.Rds")
 
 dataComponent = chartB$allYears$`2000-04-01`$data
 
