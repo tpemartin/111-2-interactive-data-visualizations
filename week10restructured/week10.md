@@ -82,6 +82,37 @@ Put every information you need to keep through your program inside a **globally 
 
     -   as the first line of a top priority `.js` file: make all other program lines able to access its information.
 
+### Mutable object
+
+```         
+# R
+app = list()
+
+updateApp = function(){
+  app$name = "my app"
+}
+
+updateApp()
+
+updateApp2 = function(){
+ app$name = "my app"
+ return(app)
+}
+
+updateApp2() -> app
+```
+
+```         
+// js code
+var app = {}
+
+updateApp = function(){
+  app.name = "my app"
+}
+
+updateApp()
+```
+
 ![Interaction between three DOM's](interaction-between-three-DOM.png)
 
 ```         
@@ -94,6 +125,44 @@ app.chartB.DOM.plotly.on("plotly_click",handleChartBPlotlyClick)
 
 // chart C click highlight
 app.chartC.DOM.plotly.on("plotly_click",handleChartCPlotlyClick)
+```
+
+### Immutable primitives
+
+Singletons such as "a student", true, 1 are called primitives. They are immutable.
+
+```         
+//js
+namePrimitive = "a student"
+nameArray = ["a student"]
+nameObject = {name: "a student"}
+```
+
+A duplicate created by `=` :
+
+```         
+namePrimitive2 = namePrimitive //clone
+nameArray2 = nameArray //linked content different label
+nameObject2 = nameObject //linked content different label
+
+```
+
+```         
+// want to change name
+app = {
+  children: {
+    name: "bill"
+  }
+}
+// wrong method
+childName = app.children.name
+childName = "mary" // immutable primitives
+app.children.name
+
+// correct method
+children = app.children // mutable objects
+children.name = "john"
+app
 ```
 
 ## Get your DOMs
