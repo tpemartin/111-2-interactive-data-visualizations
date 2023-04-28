@@ -70,6 +70,66 @@ dropDownMenu <- function(nameList, id) {
     chartBSelect.value // show the current dropdown value
     ```
 
+# Interaction between DOMs
+
+## Consolidate Your Information
+
+Put every information you need to keep through your program inside a **globally accessible** object. Here we call it `app`
+
+-   `var app = {}` must be a stand-alone line as the first line of a top priority `.js` file. Here is `init.js`
+
+    -   a stand-alone line: make `app` a global-scoped object.
+
+    -   as the first line of a top priority `.js` file: make all other program lines able to access its information.
+
+![Interaction between three DOM's](interaction-between-three-DOM.png)
+
+```         
+// chart B dropdown menu select
+app.chartB.DOM.dropdownMenu.onchange = function(){
+        chartBredraw(app.chartB.DOM.dropdownMenu.value)
+    }
+// chart B click highlight
+app.chartB.DOM.plotly.on("plotly_click",handleChartBPlotlyClick)
+
+// chart C click highlight
+app.chartC.DOM.plotly.on("plotly_click",handleChartCPlotlyClick)
+```
+
+## Get your DOMs
+
+```         
+app.chartB.DOM.dropdownMenu = document.getElementById("plotly-select")
+app.chartB.DOM.plotly = document.getElementById("widget-chartB")
+app.chartB.DOM.plotly = document.getElementById("widget-chartC")
+```
+
+## Sketch your handler 
+
+### handleDropdownMenuChange
+
+![program flow chart](handleDropdownMenuChange.png)
+
+The flow whenever required information involved, imagine they are all from the consolidated object `app`, except the dropdown menu date:
+
+Information we need:
+
+-   `date`
+
+-   `app.chartB.dataLayoutConfig`
+
+-   `app.chartB.DOM.plotly`
+
+### handleChartBPlotlyClick
+
+![flow chart](handleChartBPlotlyClick.png)
+
+-   `countryName`
+
+-   `app.chartB.tracemap`
+
+-   `app.chartB.styleChange`
+
 # Plotly JS
 
 -   <https://plotly.com/javascript/>

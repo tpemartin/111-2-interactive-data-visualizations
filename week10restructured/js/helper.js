@@ -1,35 +1,29 @@
-/* create global object: app */
-var app = {};
-
-/* chart B */
-app.chartB = {}
-app.chartB.styleChange = {
-    "original": {
-      "marker.color": "rgba(248,118,109,1)",
-      "marker.size": 8,
-      "marker.line.color": "rgba(248,118,109,1)",
-      "marker.line.width": 0
-  },
-    "new": {
-        "marker.color": "#006ba2",
-        "marker.size": 10,
-        "marker.line.color": "#006ba2",
-        "marker.line.width": 1.8
-  }, 
-  targetTrace: null
+function handleChartBPlotlyClick(ev){
+    console.log(ev)
+    let countryPicked = ev.points[0].x
+    let countryTrace = app.chartB.tracemap[countryPicked][0]
+    app.chartB.styleChange = clickHighlight(
+        app.chartB.DOM.plotly,
+        countryTrace-1, 
+        app.chartB.styleChange)
+    app.chartC.styleChange = clickHighlight(
+        app.chartC.DOM.plotly, 
+        app.chartC.tracemap[countryPicked][0]-1, 
+        app.chartC.styleChange)
 }
-
-
-/* chart C */
-app.chartC = {}
-app.chartC.styleChange = {
-    "original": {
-      "line.color": "rgba(204,204,204,0.3)"},
-    "new": {
-      "line.color": "#006ba2"},
-    "targetTrace": null
+function handleChartCPlotlyClick(ev){
+  console.log(ev)
+  let countryPicked = ev.points[0].data.name
+  let countryTrace = app.chartC.tracemap[countryPicked][0]
+  app.chartC.styleChange = clickHighlight(
+      app.chartC.DOM.plotly,
+      countryTrace-1,
+      app.chartC.styleChange)
+  app.chartB.styleChange = clickHighlight(
+      app.chartB.DOM.plotly,
+      app.chartB.tracemap[countryPicked][0]-1,
+      app.chartB.styleChange)
 }
-
 function clickHighlight(chart,trace, styleChange){
 
     if(styleChange.targetTrace){
@@ -57,3 +51,8 @@ function chartBredraw(date){
              app.chartB.dataLayoutConfig[date].config)
 }
 
+function handleDropdownMenuChange(ev){
+  console.log(ev)
+  let date = ev.target.value
+  chartBredraw(date)
+}
