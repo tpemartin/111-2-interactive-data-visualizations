@@ -4,6 +4,8 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    includes:
+      after_body: after-body.html
 ---
 
 ```{r setup, include=FALSE}
@@ -31,7 +33,7 @@ htmltools::tags$script(
   type="application/json",
   chartB$allYears |> jsonlite::toJSON(auto_unbox = T)
 )
-htmltools::includeScript("./js/helper.js")
+# htmltools::includeScript("./js/helper.js")
 ```
 
 
@@ -54,9 +56,6 @@ Column {data-width=350}
 
 ### Chart B
 
-```{r, eval=F}
-htmltools::includeHTML("selection.html")
-```
 
 ```{r}
 chartB$dropdownMenu
@@ -65,7 +64,7 @@ chartB$dropdownMenu
 ```{r chartB}
 chartB$highlightWithSplit$elementId <- "widget-chartB"
 chartB$highlightWithSplit  |>
-  htmlwidgets::onRender(readLines("../week9/chartB.js"))
+  htmlwidgets::onRender(readLines("./chartB.js"))
 # chartB$highlight |>
 #   econIDV::get_traceInfo()
 ```

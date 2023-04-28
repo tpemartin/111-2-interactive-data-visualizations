@@ -10,7 +10,7 @@ output:
 library(flexdashboard)
 chartC=readRDS("./chartC.Rds")
 chartB=readRDS("./chartB.Rds")
-# chartA=readRDS("./chartA.Rds")
+chartA=readRDS("./chartA.Rds")
 bigMacData=readRDS("../week8/bigMacData.Rds")
 ```
 
@@ -38,7 +38,7 @@ Column {data-width=150}
 ### Chart A
 
 ```{r}
-# chartA$tb0
+chartA$tb0
 ```
 
 

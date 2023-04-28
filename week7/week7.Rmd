@@ -1,0 +1,89 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-03-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+normalizePath("../week6/bigMac2.Rds") |>
+  readRDS() -> bigMac2
+```
+
+-   `..` means **starting from the parent folder**.
+
+-   `normalizePath` returns the absolute path.
+
+```{r}
+bigMac2$highlightLayer$lines
+```
+
+# Hover text
+
+```{r}
+bigMac2$data |> 
+  dplyr::glimpse()
+```
+
+```{r}
+local_price = bigMac2$data$local_price[[1]]
+name = bigMac2$data$name[[1]]
+e-1/e = USD
+1-USD
+```
+
+```{r}
+computeMedianRange <- function(dd) {
+  dd |> range(na.rm=T) -> rangeX
+  dd |> median(na.rm=T) -> medianX
+  list(range=rangeX, median=medianX)
+}
+
+bigMac2$data |> 
+  dplyr::group_by(name) |>
+  dplyr::mutate(
+    median = median(USD, na.rm=T),
+    max = max(USD, na.rm=T),
+    min = min(USD, na.rm = T),
+    text = glue::glue("Data show that {name} currency's ppp exchange rate difference from the actual exchange has a range of {max}-{min} with median {median}")
+  ) -> bigMac2$data
+
+
+```
+
+```{r}
+library(plotly)
+bigMac2$data |>
+  highlight_key(~name) -> bigMac2$highlight_byName$all
+
+
+plot_ly() |>
+  add_trace(
+    data = bigMac2$highlight_byName$all, # sharedData
+    x=~date, y=~USD,
+    text=~name,
+    split=~name,
+    # x = bigMac2$traces[[4]]$x,
+    # y = bigMac2$traces[[4]]$y,
+    #text = bigMac2$traces[[4]]$text,
+    hovertext = ~text,
+    type = bigMac2$traces[[4]]$type,
+    mode = bigMac2$traces[[4]]$mode,
+    line = bigMac2$traces[[4]]$line,
+    hoveron = bigMac2$traces[[4]]$hoveron,
+    showlegend = bigMac2$traces[[4]]$showlegend,
+    xaxis = bigMac2$traces[[4]]$xaxis,
+    yaxis = bigMac2$traces[[4]]$yaxis,
+    hoverinfo = bigMac2$traces[[4]]$hoverinfo,
+    frame = bigMac2$traces[[4]]$frame
+  ) |>
+  highlight(on="plotly_click", off="plotly_doubleclick", opacityDim = 1, color = "#205D95") |>
+  config(displayModeBar = FALSE) -> bigMac2$highlightLayer$lines
+```
+
+```{r}
+saveRDS(bigMac2, file="bigMac2.Rds")
+```

@@ -1,0 +1,38 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+bigMac2 = readRDS("bigMac2.Rds")
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+bigMac2$highlightLayer$lines |>
+  htmlwidgets::onRender(readLines("../week6/js/myhandler.js"))
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+htmltools::div(id="mydiv")
+```
+
+### Chart C
+
+```{r}
+htmltools::includeHTML("html/explain.html")
+```
+

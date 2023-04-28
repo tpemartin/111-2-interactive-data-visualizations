@@ -34,7 +34,6 @@ create a temporary function as
 function(.x){
   tags$option(.x)
 }
-
 ```
 
 ### Custom dropdown menu creator function

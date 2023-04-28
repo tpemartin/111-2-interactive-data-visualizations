@@ -101,9 +101,14 @@ library(plotly)
 ### trace 40 ----
 {
   chartB$highlightWithSplit |> plotly::plotly_build() -> chartBBuild
-  chartBBuild$x$data[[40]]
-}
+  trace40 = chartBBuild$x$data[[40]]
 
+  trace40 |> econIDV::getAttributeListPairs(names(trace40))
+}
+{
+  trace40$marker$color
+  trace40$marker$line$color
+}
 ### trace 40 attributes ----
 {
 

@@ -2,7 +2,9 @@
 //var chartBtracemap = JSON.parse(chartBMap.textContent)
 var app = Object()
 // initiate chart A, B, C interfaces
-app.chartA = app.chartB = app.chartC = Object()
+app.chartA = Object()
+app.chartB = Object()
+app.chartC = Object()
 
 //chart C
 // chartC-tracemap
@@ -15,38 +17,51 @@ app.chartC.tracemap = chartCtracemap
 chartBxJson = document.getElementById("chartB-x")
 var chartBdataLayoutConfig = JSON.parse(chartBxJson.textContent)
 app.chartB.dataLayoutConfig = chartBdataLayoutConfig
+// trace map
+app.chartB.tracemap = Object()
+allDates = Object.keys(app.chartB.dataLayoutConfig)
+allDates.forEach(date =>{
+    app.chartB.tracemap[date] = createTraceMapForADate(date)
+})
+
+function createTraceMapForADate(date){
+    var chartData = app.chartB.dataLayoutConfig[date].data
+    var chartMapping = Object()
+
+    // Global environment object is mutable within a function in JS
+    chartData.forEach((x, i)=>{
+        chartMapping[x.name] = i
+    })
+    return chartMapping
+}
 
 // styleChange
 /* chart B */
-originalStyle = {
-    "marker.color": "rgba(248,118,109,1)",
-    "marker.size": 8,
-    "marker.line.color": "rgba(248,118,109,1)",
-    "marker.line.width": 0
-}
-newStyle = {
-        "marker.color": "#006ba2",
-        "marker.size": 10,
-        "marker.line.color": "#006ba2",
-        "marker.line.width": 1.8
-}
-
-styleChangeInB = {
-    "original": originalStyle,
-    "new": newStyle,
+app.chartB.styleChange = {
+    "original": {
+          "marker.color": "rgba(248,118,109,1)",
+          "marker.size": 8,
+          "marker.line.color": "rgba(248,118,109,1)",
+          "marker.line.width": 0
+      },
+    "new": {
+              "marker.color": "#006ba2",
+              "marker.size": 10,
+              "marker.line.color": "#006ba2",
+              "marker.line.width": 1.8
+      },
     "targetTrace": null
 }
-app.chartB.styleChange = styleChangeInB
 
 /* chart C */
-styleChangeInC = {
+app.chartC.styleChange = {
     "original": {
       "line.color": "rgba(204,204,204,0.3)"},
     "new": {
       "line.color": "#006ba2"},
     "targetTrace": null
 }
-app.chartC.styleChange = styleChangeInC
+
 
 function clickHighlight(chart,trace, styleChange){
 
@@ -85,14 +100,30 @@ document.addEventListener('DOMContentLoaded', function () {
   chartBSelect.onchange=function(){
     createChartBMapping(chartBdataLayoutConfig[chartBSelect.value].data)
     chartBredraw(chartBSelect.value)
-  }
+  };
+
+
+  chartB.on("plotly_click",function(ev){
+    console.log(ev)
+    let countryPicked = ev.points[0].x
+    // new trace map does not require [0] at the end
+    //let countryTrace = chartBtracemap[countryPicked][0]
+    let countryTrace = app.chartB.tracemap[countryPicked]
+    console.log([countryPicked, countryTrace])
+    clickHighlight(chartB, countryTrace-1, app.chartB.styleChange)
+    clickHighlight(chartC, app.chartC.tracemap[countryPicked]-1, app.chartC.styleChange)
+  })
+
+
 }, false);
 
-var chartBtracemap = Object();
-function createChartBMapping(chartData){
+
+function createTracemap(chartData){
+  var tracemap = Object();
+
   // Object is mutable within a function in JS
   chartData.map((x, i)=>{
-    chartBtracemap[x.name] = i
+    tracemap[x.name] = i
   })
-  // no need to assigned map result to chartBtracemap itself
+  return(tracemap)
 }

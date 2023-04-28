@@ -51,14 +51,20 @@ When trace 40 is drawn it goes through:
   ...
 ```
 
+```{r}
+trace40$marker$color
+```
+
+
 Suppose we want to change its color to 'blue'
 
 ```{r}
 # current color
 trace40$marker$color
-
+chartB$highlightWithSplit
 chartB$highlightWithSplit |>
   plotly::style(
+    # trace40$ marker$color
     marker = list(
       color="blue"
     ),
@@ -82,7 +88,7 @@ Plotly.restyle(
 )
 ```
 
--   The nested element names ("marker" \> "color") are flattened into one single string ("marker.color").
+-   The nested element names ("marker" > "color") are flattened into one single string ("marker.color").
 
 ## Set of values in JS
 
