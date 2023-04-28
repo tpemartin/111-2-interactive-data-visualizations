@@ -19,12 +19,12 @@ bigMacData=readRDS("./bigMacData.Rds")
 htmltools::tags$script(
   id="chartB-tracemap",
   type="application/json",
-  chartB$tracemap |> jsonlite::toJSON()
+  chartB$tracemap |> jsonlite::toJSON(auto_unbox = T)
 )
 htmltools::tags$script(
   id="chartC-tracemap",
   type="application/json",
-  chartC$tracemap |> jsonlite::toJSON()
+  chartC$tracemap |> jsonlite::toJSON(auto_unbox = T)
 )
 htmltools::tags$script(
   id="chartB-x",

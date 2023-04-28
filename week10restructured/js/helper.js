@@ -1,27 +1,27 @@
 function handleChartBPlotlyClick(ev){
     console.log(ev)
     let countryPicked = ev.points[0].x
-    let countryTrace = app.chartB.tracemap[countryPicked][0]
+    let countryTrace = app.chartB.tracemap[countryPicked]
     app.chartB.styleChange = clickHighlight(
         app.chartB.DOM.plotly,
         countryTrace-1, 
         app.chartB.styleChange)
     app.chartC.styleChange = clickHighlight(
         app.chartC.DOM.plotly, 
-        app.chartC.tracemap[countryPicked][0]-1, 
+        app.chartC.tracemap[countryPicked]-1, 
         app.chartC.styleChange)
 }
 function handleChartCPlotlyClick(ev){
   console.log(ev)
   let countryPicked = ev.points[0].data.name
-  let countryTrace = app.chartC.tracemap[countryPicked][0]
+  let countryTrace = app.chartC.tracemap[countryPicked]
   app.chartC.styleChange = clickHighlight(
       app.chartC.DOM.plotly,
       countryTrace-1,
       app.chartC.styleChange)
   app.chartB.styleChange = clickHighlight(
       app.chartB.DOM.plotly,
-      app.chartB.tracemap[countryPicked][0]-1,
+      app.chartB.tracemap[countryPicked]-1,
       app.chartB.styleChange)
 }
 function clickHighlight(chart,trace, styleChange){
@@ -54,5 +54,9 @@ function chartBredraw(date){
 function handleDropdownMenuChange(ev){
   console.log(ev)
   let date = ev.target.value
+//   updateChartBTraceMap(date)
   chartBredraw(date)
+}
+function updateChartBTraceMap(date){
+
 }
