@@ -43,7 +43,7 @@ The argument callback takes the body of a JavaScript function as a string. The f
 
 ```{js}
 function(table){
-  dt = table;
+  dt = table
 }
 ```
 
@@ -75,3 +75,13 @@ We can use `callback = DT::JS("dt = table")` option to create a `dt` in JS envir
 
 -   <https://hyp.is/VXSo1OCTEe21nF-_gaH0Kw/datatables.net/manual/events>
 
+# CSS selector
+
+```
+let chartA = document.getElementById("widget-chartA")
+chartA.querySelectorAll("tbody tr")
+```
+
+# R leaflet
+
+  * <https://rstudio.github.io/leaflet/>
