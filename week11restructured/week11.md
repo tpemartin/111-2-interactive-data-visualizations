@@ -84,4 +84,5 @@ chartA.querySelectorAll("tbody tr")
 
 # R leaflet
 
-  * <https://rstudio.github.io/leaflet/>
+  * R version: <https://rstudio.github.io/leaflet/>
+  * js version: <https://leafletjs.com/>
