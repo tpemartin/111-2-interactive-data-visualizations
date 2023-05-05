@@ -1,3 +1,11 @@
-ubikeData <-
-jsonlite::fromJSON("https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json")
-
+ubike_data <-
+    (jsonlite::fromJSON("ubikeAPI.json"))[["data-url"]] |>
+    jsonlite::fromJSON()
+ubike_data
+dplyr::glimpse(ubike_data)
+{
+    library(leaflet)
+    leaflet(ubike_data) %>%
+        addTiles() %>%
+        addMarkers(~lng, ~lat)
+}
