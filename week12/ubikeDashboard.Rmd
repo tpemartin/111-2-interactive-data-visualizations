@@ -26,6 +26,7 @@ Column {data-width=350}
 ### Chart B
 
 ```{r}
-
+ubikeMap$sharedData |>
+  DT::datatable()
 ```
 
