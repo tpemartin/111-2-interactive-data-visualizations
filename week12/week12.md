@@ -109,3 +109,12 @@ navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
   * [台北市API](https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json)
 
 ## data merge
+
+# Github Desktop
+
+  * copy the url of the repo
+  * launch Github Desktop
+  * Under `File` menu, choose `Clone repository`
+  * Choose tab `URL`, paste the url, and choose the local path
+  * click `Clone`
+  
