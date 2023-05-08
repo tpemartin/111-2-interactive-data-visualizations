@@ -1,15 +1,13 @@
 ubikeMap <- list()
-
+source("R/helpers.R")
+# data preparation -----
+## Youbike API ---
 urlAPI <- jsonlite::fromJSON("ubikeAPI.json")
 
-# New Taipei City Youbike data
+## New Taipei City  ------
 {
     pages <- c(0, 1)
-    getNewTaipeiJSON <- function(page) {
-        urlAPI$`New Taipei` |>
-            paste0("&page=", page) |>
-            jsonlite::fromJSON()
-    }
+
     # pages |>
     #   purrr::map(getNewTaipeiJSON) -> listNewTaipeiUbike
 
@@ -18,13 +16,14 @@ urlAPI <- jsonlite::fromJSON("ubikeAPI.json")
             getNewTaipeiJSON
         ) -> ubikeMap$data$`New Taipei`
 }
-# Taipei city Youbike data
+## Taipei city  ------
 {
     ubikeMap$data$Taipei <-
         urlAPI$Taipei |>
         jsonlite::fromJSON()
 }
-# Correct data class
+## Merge data ----
+### Correct class  ------
 {
     library(magrittr)
     ubikeMap$data$Taipei %<>%
@@ -42,20 +41,24 @@ urlAPI <- jsonlite::fromJSON("ubikeAPI.json")
         )
     dplyr::glimpse(ubikeMap$data$Taipei)
 }
-# combine data
-dplyr::bind_rows(
+### row combine ----
+{
+  dplyr::bind_rows(
     ubikeMap$data$Taipei,
     ubikeMap$data$`New Taipei`
 ) -> ubikeMap$dataMerged
+}
 
-# prepare crosstalk shared data
+View(ubikeMap$dataMerged)
+
+# prepare crosstalk shared data  ------
 ubikeMap$sharedData <-
     crosstalk::SharedData$new(ubikeMap$dataMerged)
 
 {
     library(leaflet)
 
-    leaflet(ubikeMap$sharedData) |>
+    leaflet(ubikeMap$dataMerged) |>
         setView(121.5288805, 25.0418781, zoom = 14) |>
         addProviderTiles(
             providers$CartoDB.Positron
@@ -72,8 +75,10 @@ ubikeMap$sharedData <-
                    myMap = map;
                    map.locate({setView: true}); }")
         )) -> ubikeMap$leaflet
-}
-# Google direction
+    }
+ubikeMap$leaflet
+View(ubikeMap$leaflet)
+# Google direction ------
 {
     ubikeMap$dataMerged[c("lat", "lng")][500, c("lat", "lng")] |>
         paste0(collapse = ",") -> pin
