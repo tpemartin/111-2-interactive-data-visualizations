@@ -82,6 +82,9 @@ marker.bindPopup("Taipei");
 
    * https://leafletjs.com/reference.html#circlemarker
 
+### popup 
+
+   * Use `<a>` tag: https://www.w3schools.com/tags/tag_a.asp
 
 
 # User GPS
