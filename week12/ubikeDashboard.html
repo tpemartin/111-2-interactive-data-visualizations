@@ -4173,6 +4173,866 @@ function asArray(value) {
 
 },{}]},{},[13]);
 </script>
+<script>(function (root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		// AMD. Register as an anonymous module.
+		define(['leaflet'], factory);
+	} else if (typeof modules === 'object' && module.exports) {
+		// define a Common JS module that relies on 'leaflet'
+		module.exports = factory(require('leaflet'));
+	} else {
+		// Assume Leaflet is loaded into global object L already
+		factory(L);
+	}
+}(this, function (L) {
+	'use strict';
+
+	L.TileLayer.Provider = L.TileLayer.extend({
+		initialize: function (arg, options) {
+			var providers = L.TileLayer.Provider.providers;
+
+			var parts = arg.split('.');
+
+			var providerName = parts[0];
+			var variantName = parts[1];
+
+			if (!providers[providerName]) {
+				throw 'No such provider (' + providerName + ')';
+			}
+
+			var provider = {
+				url: providers[providerName].url,
+				options: providers[providerName].options
+			};
+
+			// overwrite values in provider from variant.
+			if (variantName && 'variants' in providers[providerName]) {
+				if (!(variantName in providers[providerName].variants)) {
+					throw 'No such variant of ' + providerName + ' (' + variantName + ')';
+				}
+				var variant = providers[providerName].variants[variantName];
+				var variantOptions;
+				if (typeof variant === 'string') {
+					variantOptions = {
+						variant: variant
+					};
+				} else {
+					variantOptions = variant.options;
+				}
+				provider = {
+					url: variant.url || provider.url,
+					options: L.Util.extend({}, provider.options, variantOptions)
+				};
+			}
+
+			// replace attribution placeholders with their values from toplevel provider attribution,
+			// recursively
+			var attributionReplacer = function (attr) {
+				if (attr.indexOf('{attribution.') === -1) {
+					return attr;
+				}
+				return attr.replace(/\{attribution.(\w*)\}/g,
+					function (match, attributionName) {
+						return attributionReplacer(providers[attributionName].options.attribution);
+					}
+				);
+			};
+			provider.options.attribution = attributionReplacer(provider.options.attribution);
+
+			// Compute final options combining provider options with any user overrides
+			var layerOpts = L.Util.extend({}, provider.options, options);
+			L.TileLayer.prototype.initialize.call(this, provider.url, layerOpts);
+		}
+	});
+
+	/**
+	 * Definition of providers.
+	 * see http://leafletjs.com/reference.html#tilelayer for options in the options map.
+	 */
+
+	L.TileLayer.Provider.providers = {
+		OpenStreetMap: {
+			url: '//{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 19,
+				attribution:
+					'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			},
+			variants: {
+				Mapnik: {},
+				DE: {
+					url: '//{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png',
+					options: {
+						maxZoom: 18
+					}
+				},
+				CH: {
+					url: '//tile.osm.ch/switzerland/{z}/{x}/{y}.png',
+					options: {
+						maxZoom: 18,
+						bounds: [[45, 5], [48, 11]]
+					}
+				},
+				France: {
+					url: '//{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+					options: {
+						maxZoom: 20,
+						attribution: '&copy; Openstreetmap France | {attribution.OpenStreetMap}'
+					}
+				},
+				HOT: {
+					url: '//{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+					options: {
+						attribution:
+							'{attribution.OpenStreetMap}, ' +
+							'Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> ' +
+							'hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
+					}
+				},
+				BZH: {
+					url: '//tile.openstreetmap.bzh/br/{z}/{x}/{y}.png',
+					options: {
+						attribution: '{attribution.OpenStreetMap}, Tiles courtesy of <a href="http://www.openstreetmap.bzh/" target="_blank">Breton OpenStreetMap Team</a>',
+						bounds: [[46.2, -5.5], [50, 0.7]]
+					}
+				}
+			}
+		},
+		OpenSeaMap: {
+			url: '//tiles.openseamap.org/seamark/{z}/{x}/{y}.png',
+			options: {
+				attribution: 'Map data: &copy; <a href="http://www.openseamap.org">OpenSeaMap</a> contributors'
+			}
+		},
+		OpenPtMap: {
+			url: 'http://openptmap.org/tiles/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 17,
+				attribution: 'Map data: &copy; <a href="http://www.openptmap.org">OpenPtMap</a> contributors'
+			}
+		},
+		OpenTopoMap: {
+			url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 17,
+				attribution: 'Map data: {attribution.OpenStreetMap}, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+			}
+		},
+		OpenRailwayMap: {
+			url: 'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 19,
+				attribution: 'Map data: {attribution.OpenStreetMap} | Map style: &copy; <a href="https://www.OpenRailwayMap.org">OpenRailwayMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+			}
+		},
+		OpenFireMap: {
+			url: 'http://openfiremap.org/hytiles/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 19,
+				attribution: 'Map data: {attribution.OpenStreetMap} | Map style: &copy; <a href="http://www.openfiremap.org">OpenFireMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+			}
+		},
+		SafeCast: {
+			url: '//s3.amazonaws.com/te512.safecast.org/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 16,
+				attribution: 'Map data: {attribution.OpenStreetMap} | Map style: &copy; <a href="https://blog.safecast.org/about/">SafeCast</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+			}
+		},
+		Thunderforest: {
+			url: 'https://{s}.tile.thunderforest.com/{variant}/{z}/{x}/{y}.png?apikey={apikey}',
+			options: {
+				attribution:
+					'&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, {attribution.OpenStreetMap}',
+				variant: 'cycle',
+				apikey: '<insert your api key here>',
+				maxZoom: 22
+			},
+			variants: {
+				OpenCycleMap: 'cycle',
+				Transport: {
+					options: {
+						variant: 'transport'
+					}
+				},
+				TransportDark: {
+					options: {
+						variant: 'transport-dark'
+					}
+				},
+				SpinalMap: {
+					options: {
+						variant: 'spinal-map'
+					}
+				},
+				Landscape: 'landscape',
+				Outdoors: 'outdoors',
+				Pioneer: 'pioneer',
+				MobileAtlas: 'mobile-atlas',
+				Neighbourhood: 'neighbourhood'
+			}
+		},
+		OpenMapSurfer: {
+			url: 'https://maps.heigit.org/openmapsurfer/tiles/{variant}/webmercator/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 19,
+				variant: 'roads',
+				attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> | Map data '
+			},
+			variants: {
+				Roads: {
+					options: {
+						variant: 'roads',
+						attribution: '{attribution.OpenMapSurfer}{attribution.OpenStreetMap}'
+					}
+				},
+				Hybrid: {
+					options: {
+						variant: 'hybrid',
+						attribution: '{attribution.OpenMapSurfer}{attribution.OpenStreetMap}'
+					}
+				},
+				AdminBounds: {
+					options: {
+						variant: 'adminb',
+						maxZoom: 18,
+						attribution: '{attribution.OpenMapSurfer}{attribution.OpenStreetMap}'
+					}
+				},
+				ContourLines: {
+					options: {
+						variant: 'asterc',
+						maxZoom: 18,
+						minZoom: 13,
+						attribution: '{attribution.OpenMapSurfer} <a href="https://lpdaac.usgs.gov/products/aster_policies">ASTER GDEM</a>'
+					}
+				},
+				Hillshade: {
+					options: {
+						variant: 'asterh',
+						maxZoom: 18,
+						attribution: '{attribution.OpenMapSurfer} <a href="https://lpdaac.usgs.gov/products/aster_policies">ASTER GDEM</a>, <a href="http://srtm.csi.cgiar.org/">SRTM</a>'
+					}
+				},
+				ElementsAtRisk: {
+					options: {
+						variant: 'elements_at_risk',
+						attribution: '{attribution.OpenMapSurfer}{attribution.OpenStreetMap}'
+					}
+				}
+			}
+		},
+		Hydda: {
+			url: '//{s}.tile.openstreetmap.se/hydda/{variant}/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 18,
+				variant: 'full',
+				attribution: 'Tiles courtesy of <a href="http://openstreetmap.se/" target="_blank">OpenStreetMap Sweden</a> &mdash; Map data {attribution.OpenStreetMap}'
+			},
+			variants: {
+				Full: 'full',
+				Base: 'base',
+				RoadsAndLabels: 'roads_and_labels'
+			}
+		},
+		MapBox: {
+			url: 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}{r}.png?access_token={accessToken}',
+			options: {
+				attribution:
+					'<a href="https://www.mapbox.com/about/maps/" target="_blank">&copy; Mapbox</a> ' +
+					'{attribution.OpenStreetMap} ' +
+					'<a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a>',
+				subdomains: 'abcd',
+				id: 'mapbox.streets',
+				accessToken: '<insert your access token here>',
+			}
+		},
+		Stamen: {
+			url: '//stamen-tiles-{s}.a.ssl.fastly.net/{variant}/{z}/{x}/{y}{r}.{ext}',
+			options: {
+				attribution:
+					'Map tiles by <a href="http://stamen.com">Stamen Design</a>, ' +
+					'<a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; ' +
+					'Map data {attribution.OpenStreetMap}',
+				subdomains: 'abcd',
+				minZoom: 0,
+				maxZoom: 20,
+				variant: 'toner',
+				ext: 'png'
+			},
+			variants: {
+				Toner: 'toner',
+				TonerBackground: 'toner-background',
+				TonerHybrid: 'toner-hybrid',
+				TonerLines: 'toner-lines',
+				TonerLabels: 'toner-labels',
+				TonerLite: 'toner-lite',
+				Watercolor: {
+					url: '//stamen-tiles-{s}.a.ssl.fastly.net/{variant}/{z}/{x}/{y}.{ext}',
+					options: {
+						variant: 'watercolor',
+						ext: 'jpg',
+						minZoom: 1,
+						maxZoom: 16
+					}
+				},
+				Terrain: {
+					options: {
+						variant: 'terrain',
+						minZoom: 0,
+						maxZoom: 18
+					}
+				},
+				TerrainBackground: {
+					options: {
+						variant: 'terrain-background',
+						minZoom: 0,
+						maxZoom: 18
+					}
+				},
+				TerrainLabels: {
+					options: {
+						variant: 'terrain-labels',
+						minZoom: 0,
+						maxZoom: 18
+					}
+				},
+				TopOSMRelief: {
+					url: '//stamen-tiles-{s}.a.ssl.fastly.net/{variant}/{z}/{x}/{y}.{ext}',
+					options: {
+						variant: 'toposm-color-relief',
+						ext: 'jpg',
+						bounds: [[22, -132], [51, -56]]
+					}
+				},
+				TopOSMFeatures: {
+					options: {
+						variant: 'toposm-features',
+						bounds: [[22, -132], [51, -56]],
+						opacity: 0.9
+					}
+				}
+			}
+		},
+		TomTom: {
+			url: 'https://{s}.api.tomtom.com/map/1/tile/{variant}/{style}/{z}/{x}/{y}.{ext}?key={apikey}',
+			options: {
+				variant: 'basic',
+				maxZoom: 22,
+				attribution:
+					'<a href="https://tomtom.com" target="_blank">&copy;  1992 - ' + new Date().getFullYear() + ' TomTom.</a> ',
+				subdomains: 'abcd',
+				style: 'main',
+				ext: 'png',
+				apikey: '<insert your API key here>',
+			},
+			variants: {
+				Basic: 'basic',
+				Hybrid: 'hybrid',
+				Labels: 'labels'
+			}
+		},
+		Esri: {
+			url: '//server.arcgisonline.com/ArcGIS/rest/services/{variant}/MapServer/tile/{z}/{y}/{x}',
+			options: {
+				variant: 'World_Street_Map',
+				attribution: 'Tiles &copy; Esri'
+			},
+			variants: {
+				WorldStreetMap: {
+					options: {
+						attribution:
+							'{attribution.Esri} &mdash; ' +
+							'Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+					}
+				},
+				DeLorme: {
+					options: {
+						variant: 'Specialty/DeLorme_World_Base_Map',
+						minZoom: 1,
+						maxZoom: 11,
+						attribution: '{attribution.Esri} &mdash; Copyright: &copy;2012 DeLorme'
+					}
+				},
+				WorldTopoMap: {
+					options: {
+						variant: 'World_Topo_Map',
+						attribution:
+							'{attribution.Esri} &mdash; ' +
+							'Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+					}
+				},
+				WorldImagery: {
+					options: {
+						variant: 'World_Imagery',
+						attribution:
+							'{attribution.Esri} &mdash; ' +
+							'Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+					}
+				},
+				WorldTerrain: {
+					options: {
+						variant: 'World_Terrain_Base',
+						maxZoom: 13,
+						attribution:
+							'{attribution.Esri} &mdash; ' +
+							'Source: USGS, Esri, TANA, DeLorme, and NPS'
+					}
+				},
+				WorldShadedRelief: {
+					options: {
+						variant: 'World_Shaded_Relief',
+						maxZoom: 13,
+						attribution: '{attribution.Esri} &mdash; Source: Esri'
+					}
+				},
+				WorldPhysical: {
+					options: {
+						variant: 'World_Physical_Map',
+						maxZoom: 8,
+						attribution: '{attribution.Esri} &mdash; Source: US National Park Service'
+					}
+				},
+				OceanBasemap: {
+					options: {
+						variant: 'Ocean_Basemap',
+						maxZoom: 13,
+						attribution: '{attribution.Esri} &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri'
+					}
+				},
+				NatGeoWorldMap: {
+					options: {
+						variant: 'NatGeo_World_Map',
+						maxZoom: 16,
+						attribution: '{attribution.Esri} &mdash; National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC'
+					}
+				},
+				WorldGrayCanvas: {
+					options: {
+						variant: 'Canvas/World_Light_Gray_Base',
+						maxZoom: 16,
+						attribution: '{attribution.Esri} &mdash; Esri, DeLorme, NAVTEQ'
+					}
+				}
+			}
+		},
+		OpenWeatherMap: {
+			url: 'http://{s}.tile.openweathermap.org/map/{variant}/{z}/{x}/{y}.png?appid={apiKey}',
+			options: {
+				maxZoom: 19,
+				attribution: 'Map data &copy; <a href="http://openweathermap.org">OpenWeatherMap</a>',
+				apiKey:'<insert your api key here>',
+				opacity: 0.5
+			},
+			variants: {
+				Clouds: 'clouds',
+				CloudsClassic: 'clouds_cls',
+				Precipitation: 'precipitation',
+				PrecipitationClassic: 'precipitation_cls',
+				Rain: 'rain',
+				RainClassic: 'rain_cls',
+				Pressure: 'pressure',
+				PressureContour: 'pressure_cntr',
+				Wind: 'wind',
+				Temperature: 'temp',
+				Snow: 'snow'
+			}
+		},
+		HERE: {
+			/*
+			 * HERE maps, formerly Nokia maps.
+			 * These basemaps are free, but you need an API key. Please sign up at
+			 * https://developer.here.com/plans
+			 */
+			url:
+				'https://{s}.{base}.maps.api.here.com/maptile/2.1/' +
+				'{type}/{mapID}/{variant}/{z}/{x}/{y}/{size}/{format}?' +
+				'app_id={app_id}&app_code={app_code}&lg={language}',
+			options: {
+				attribution:
+					'Map &copy; 1987-' + new Date().getFullYear() + ' <a href="http://developer.here.com">HERE</a>',
+				subdomains: '1234',
+				mapID: 'newest',
+				'app_id': '<insert your app_id here>',
+				'app_code': '<insert your app_code here>',
+				base: 'base',
+				variant: 'normal.day',
+				maxZoom: 20,
+				type: 'maptile',
+				language: 'eng',
+				format: 'png8',
+				size: '256'
+			},
+			variants: {
+				normalDay: 'normal.day',
+				normalDayCustom: 'normal.day.custom',
+				normalDayGrey: 'normal.day.grey',
+				normalDayMobile: 'normal.day.mobile',
+				normalDayGreyMobile: 'normal.day.grey.mobile',
+				normalDayTransit: 'normal.day.transit',
+				normalDayTransitMobile: 'normal.day.transit.mobile',
+				normalDayTraffic: {
+					options: {
+						variant: 'normal.traffic.day',
+						base: 'traffic',
+						type: 'traffictile'
+					}
+				},
+				normalNight: 'normal.night',
+				normalNightMobile: 'normal.night.mobile',
+				normalNightGrey: 'normal.night.grey',
+				normalNightGreyMobile: 'normal.night.grey.mobile',
+				normalNightTransit: 'normal.night.transit',
+				normalNightTransitMobile: 'normal.night.transit.mobile',
+				reducedDay: 'reduced.day',
+				reducedNight: 'reduced.night',
+				basicMap: {
+					options: {
+						type: 'basetile'
+					}
+				},
+				mapLabels: {
+					options: {
+						type: 'labeltile',
+						format: 'png'
+					}
+				},
+				trafficFlow: {
+					options: {
+						base: 'traffic',
+						type: 'flowtile'
+					}
+				},
+				carnavDayGrey: 'carnav.day.grey',
+				hybridDay: {
+					options: {
+						base: 'aerial',
+						variant: 'hybrid.day'
+					}
+				},
+				hybridDayMobile: {
+					options: {
+						base: 'aerial',
+						variant: 'hybrid.day.mobile'
+					}
+				},
+				hybridDayTransit: {
+					options: {
+						base: 'aerial',
+						variant: 'hybrid.day.transit'
+					}
+				},
+				hybridDayGrey: {
+					options: {
+						base: 'aerial',
+						variant: 'hybrid.grey.day'
+					}
+				},
+				hybridDayTraffic: {
+					options: {
+						variant: 'hybrid.traffic.day',
+						base: 'traffic',
+						type: 'traffictile'
+					}
+				},
+				pedestrianDay: 'pedestrian.day',
+				pedestrianNight: 'pedestrian.night',
+				satelliteDay: {
+					options: {
+						base: 'aerial',
+						variant: 'satellite.day'
+					}
+				},
+				terrainDay: {
+					options: {
+						base: 'aerial',
+						variant: 'terrain.day'
+					}
+				},
+				terrainDayMobile: {
+					options: {
+						base: 'aerial',
+						variant: 'terrain.day.mobile'
+					}
+				}
+			}
+		},
+		FreeMapSK: {
+			url: 'http://t{s}.freemap.sk/T/{z}/{x}/{y}.jpeg',
+			options: {
+				minZoom: 8,
+				maxZoom: 16,
+				subdomains: '1234',
+				bounds: [[47.204642, 15.996093], [49.830896, 22.576904]],
+				attribution:
+					'{attribution.OpenStreetMap}, vizualization CC-By-SA 2.0 <a href="http://freemap.sk">Freemap.sk</a>'
+			}
+		},
+		MtbMap: {
+			url: 'http://tile.mtbmap.cz/mtbmap_tiles/{z}/{x}/{y}.png',
+			options: {
+				attribution:
+					'{attribution.OpenStreetMap} &amp; USGS'
+			}
+		},
+		CartoDB: {
+			url: 'https://{s}.basemaps.cartocdn.com/{variant}/{z}/{x}/{y}{r}.png',
+			options: {
+				attribution: '{attribution.OpenStreetMap} &copy; <a href="https://carto.com/attributions">CARTO</a>',
+				subdomains: 'abcd',
+				maxZoom: 19,
+				variant: 'light_all'
+			},
+			variants: {
+				Positron: 'light_all',
+				PositronNoLabels: 'light_nolabels',
+				PositronOnlyLabels: 'light_only_labels',
+				DarkMatter: 'dark_all',
+				DarkMatterNoLabels: 'dark_nolabels',
+				DarkMatterOnlyLabels: 'dark_only_labels',
+				Voyager: 'rastertiles/voyager',
+				VoyagerNoLabels: 'rastertiles/voyager_nolabels',
+				VoyagerOnlyLabels: 'rastertiles/voyager_only_labels',
+				VoyagerLabelsUnder: 'rastertiles/voyager_labels_under'
+			}
+		},
+		HikeBike: {
+			url: 'https://tiles.wmflabs.org/{variant}/{z}/{x}/{y}.png',
+			options: {
+				maxZoom: 19,
+				attribution: '{attribution.OpenStreetMap}',
+				variant: 'hikebike'
+			},
+			variants: {
+				HikeBike: {},
+				HillShading: {
+					options: {
+						maxZoom: 15,
+						variant: 'hillshading'
+					}
+				}
+			}
+		},
+		BasemapAT: {
+			url: '//maps{s}.wien.gv.at/basemap/{variant}/normal/google3857/{z}/{y}/{x}.{format}',
+			options: {
+				maxZoom: 19,
+				attribution: 'Datenquelle: <a href="https://www.basemap.at">basemap.at</a>',
+				subdomains: ['', '1', '2', '3', '4'],
+				format: 'png',
+				bounds: [[46.358770, 8.782379], [49.037872, 17.189532]],
+				variant: 'geolandbasemap'
+			},
+			variants: {
+				basemap: {
+					options: {
+						maxZoom: 20, // currently only in Vienna
+						variant: 'geolandbasemap'
+					}
+				},
+				grau: 'bmapgrau',
+				overlay: 'bmapoverlay',
+				highdpi: {
+					options: {
+						variant: 'bmaphidpi',
+						format: 'jpeg'
+					}
+				},
+				orthofoto: {
+					options: {
+						maxZoom: 20, // currently only in Vienna
+						variant: 'bmaporthofoto30cm',
+						format: 'jpeg'
+					}
+				}
+			}
+		},
+		nlmaps: {
+			url: '//geodata.nationaalgeoregister.nl/tiles/service/wmts/{variant}/EPSG:3857/{z}/{x}/{y}.png',
+			options: {
+				minZoom: 6,
+				maxZoom: 19,
+				bounds: [[50.5, 3.25], [54, 7.6]],
+				attribution: 'Kaartgegevens &copy; <a href="kadaster.nl">Kadaster</a>'
+			},
+			variants: {
+				'standaard': 'brtachtergrondkaart',
+				'pastel': 'brtachtergrondkaartpastel',
+				'grijs': 'brtachtergrondkaartgrijs',
+				'luchtfoto': {
+					'url': '//geodata.nationaalgeoregister.nl/luchtfoto/rgb/wmts/1.0.0/2016_ortho25/EPSG:3857/{z}/{x}/{y}.png',
+				}
+			}
+		},
+		NASAGIBS: {
+			url: 'https://map1.vis.earthdata.nasa.gov/wmts-webmerc/{variant}/default/{time}/{tilematrixset}{maxZoom}/{z}/{y}/{x}.{format}',
+			options: {
+				attribution:
+					'Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System ' +
+					'(<a href="https://earthdata.nasa.gov">ESDIS</a>) with funding provided by NASA/HQ.',
+				bounds: [[-85.0511287776, -179.999999975], [85.0511287776, 179.999999975]],
+				minZoom: 1,
+				maxZoom: 9,
+				format: 'jpg',
+				time: '',
+				tilematrixset: 'GoogleMapsCompatible_Level'
+			},
+			variants: {
+				ModisTerraTrueColorCR: 'MODIS_Terra_CorrectedReflectance_TrueColor',
+				ModisTerraBands367CR: 'MODIS_Terra_CorrectedReflectance_Bands367',
+				ViirsEarthAtNight2012: {
+					options: {
+						variant: 'VIIRS_CityLights_2012',
+						maxZoom: 8
+					}
+				},
+				ModisTerraLSTDay: {
+					options: {
+						variant: 'MODIS_Terra_Land_Surface_Temp_Day',
+						format: 'png',
+						maxZoom: 7,
+						opacity: 0.75
+					}
+				},
+				ModisTerraSnowCover: {
+					options: {
+						variant: 'MODIS_Terra_Snow_Cover',
+						format: 'png',
+						maxZoom: 8,
+						opacity: 0.75
+					}
+				},
+				ModisTerraAOD: {
+					options: {
+						variant: 'MODIS_Terra_Aerosol',
+						format: 'png',
+						maxZoom: 6,
+						opacity: 0.75
+					}
+				},
+				ModisTerraChlorophyll: {
+					options: {
+						variant: 'MODIS_Terra_Chlorophyll_A',
+						format: 'png',
+						maxZoom: 7,
+						opacity: 0.75
+					}
+				}
+			}
+		},
+		NLS: {
+			// NLS maps are copyright National library of Scotland.
+			// http://maps.nls.uk/projects/api/index.html
+			// Please contact NLS for anything other than non-commercial low volume usage
+			//
+			// Map sources: Ordnance Survey 1:1m to 1:63K, 1920s-1940s
+			//   z0-9  - 1:1m
+			//  z10-11 - quarter inch (1:253440)
+			//  z12-18 - one inch (1:63360)
+			url: '//nls-{s}.tileserver.com/nls/{z}/{x}/{y}.jpg',
+			options: {
+				attribution: '<a href="http://geo.nls.uk/maps/">National Library of Scotland Historic Maps</a>',
+				bounds: [[49.6, -12], [61.7, 3]],
+				minZoom: 1,
+				maxZoom: 18,
+				subdomains: '0123',
+			}
+		},
+		JusticeMap: {
+			// Justice Map (http://www.justicemap.org/)
+			// Visualize race and income data for your community, county and country.
+			// Includes tools for data journalists, bloggers and community activists.
+			url: 'http://www.justicemap.org/tile/{size}/{variant}/{z}/{x}/{y}.png',
+			options: {
+				attribution: '<a href="http://www.justicemap.org/terms.php">Justice Map</a>',
+				// one of 'county', 'tract', 'block'
+				size: 'county',
+				// Bounds for USA, including Alaska and Hawaii
+				bounds: [[14, -180], [72, -56]]
+			},
+			variants: {
+				income: 'income',
+				americanIndian: 'indian',
+				asian: 'asian',
+				black: 'black',
+				hispanic: 'hispanic',
+				multi: 'multi',
+				nonWhite: 'nonwhite',
+				white: 'white',
+				plurality: 'plural'
+			}
+		},
+		Wikimedia: {
+			url: 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}{r}.png',
+			options: {
+				attribution: '<a href="https://wikimediafoundation.org/wiki/Maps_Terms_of_Use">Wikimedia</a>',
+				minZoom: 1,
+				maxZoom: 19
+			}
+		},
+		GeoportailFrance: {
+			url: 'https://wxs.ign.fr/{apikey}/geoportail/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE={style}&TILEMATRIXSET=PM&FORMAT={format}&LAYER={variant}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}',
+			options: {
+				attribution: '<a target="_blank" href="https://www.geoportail.gouv.fr/">Geoportail France</a>',
+				bounds: [[-75, -180], [81, 180]],
+				minZoom: 2,
+				maxZoom: 18,
+				// Get your own geoportail apikey here : http://professionnels.ign.fr/ign/contrats/
+				// NB : 'choisirgeoportail' is a demonstration key that comes with no guarantee
+				apikey: 'choisirgeoportail',
+				format: 'image/jpeg',
+				style : 'normal',
+				variant: 'GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-EXPRESS.STANDARD'
+			},
+			variants: {
+				parcels: {
+					options : {
+						variant: 'CADASTRALPARCELS.PARCELS',
+						maxZoom: 20,
+						style : 'bdparcellaire',
+						format: 'image/png'
+					}
+				},
+				ignMaps: 'GEOGRAPHICALGRIDSYSTEMS.MAPS',
+				maps: 'GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN-EXPRESS.STANDARD',
+				orthos: {
+					options: {
+						maxZoom: 19,
+						variant: 'ORTHOIMAGERY.ORTHOPHOTOS'
+					}
+				}
+			}
+		},
+		OneMapSG: {
+			url: '//maps-{s}.onemap.sg/v3/{variant}/{z}/{x}/{y}.png',
+			options: {
+				variant: 'Default',
+				minZoom: 11,
+				maxZoom: 18,
+				bounds: [[1.56073, 104.11475], [1.16, 103.502]],
+				attribution: '<img src="https://docs.onemap.sg/maps/images/oneMap64-01.png" style="height:20px;width:20px;"/> New OneMap | Map data &copy; contributors, <a href="http://SLA.gov.sg">Singapore Land Authority</a>'
+			},
+			variants: {
+				Default: 'Default',
+				Night: 'Night',
+				Original: 'Original',
+				Grey: 'Grey',
+				LandLot: 'LandLot'
+			}
+		}
+	};
+
+	L.tileLayer.provider = function (provider, options) {
+		return new L.TileLayer.Provider(provider, options);
+	};
+
+	return L;
+}));
+</script>
+<script>LeafletWidget.methods.addProviderTiles = function(provider, layerId, group, options) {
+  this.layerManager.addLayer(L.tileLayer.provider(provider, options), "tile", layerId, group);
+};
+</script>
 <style type="text/css">
 
 .storyboard-nav button {
@@ -5979,20 +6839,38 @@ window.FlexDashboardComponents.push({
 <div class="knitr-options" data-fig-width="576" data-fig-height="460">
 
 </div>
+<script id="youbike-data" type="application/json">[{"lat":25.0261,"lng":121.5436},{"lat":25.0256,"lng":121.5436},{"lat":25.0243,"lng":121.5412},{"lat":25.0235,"lng":121.5428},{"lat":25.0215,"lng":121.543},{"lat":25.0243,"lng":121.5433},{"lat":25.0225,"lng":121.5433},{"lat":25.0211,"lng":121.5341},{"lat":25.0198,"lng":121.5338},{"lat":25.0189,"lng":121.5336},{"lat":25.0199,"lng":121.5298},{"lat":25.0254,"lng":121.5433},{"lat":25.0172,"lng":121.532},{"lat":25.0203,"lng":121.5464},{"lat":25.0193,"lng":121.5299},{"lat":25.019,"lng":121.5316},{"lat":25.0245,"lng":121.5467},{"lat":25.0209,"lng":121.5331},{"lat":25.0139,"lng":121.5355},{"lat":25.0149,"lng":121.5344},{"lat":25.0124,"lng":121.5366},{"lat":25.0145,"lng":121.5414},{"lat":25.013,"lng":121.5397},{"lat":25.0114,"lng":121.5406},{"lat":25.0118,"lng":121.5417},{"lat":25.0143,"lng":121.5438},{"lat":25.0123,"lng":121.545},{"lat":25.0136,"lng":121.5466},{"lat":25.0154,"lng":121.547},{"lat":25.0164,"lng":121.5453},{"lat":25.0166,"lng":121.5452},{"lat":25.0158,"lng":121.5429},{"lat":25.0179,"lng":121.5476},{"lat":25.0203,"lng":121.545},{"lat":25.0208,"lng":121.5443},{"lat":25.021,"lng":121.5428},{"lat":25.021,"lng":121.5408},{"lat":25.0222,"lng":121.5363},{"lat":25.0222,"lng":121.5347},{"lat":25.0173,"lng":121.5447},{"lat":25.0229,"lng":121.5466},{"lat":25.0216,"lng":121.547},{"lat":25.0215,"lng":121.5441},{"lat":25.0219,"lng":121.5316},{"lat":25.0189,"lng":121.5501},{"lat":25.0186,"lng":121.5556},{"lat":25.0162,"lng":121.5504},{"lat":25.021,"lng":121.5521},{"lat":25.0181,"lng":121.5593},{"lat":25.024,"lng":121.5527},{"lat":25.027,"lng":121.5555},{"lat":25.0269,"lng":121.5533},{"lat":25.0202,"lng":121.5294},{"lat":25.0267,"lng":121.5253},{"lat":25.0264,"lng":121.5297},{"lat":25.0262,"lng":121.5317},{"lat":25.0266,"lng":121.5297},{"lat":25.0276,"lng":121.5222},{"lat":25.0271,"lng":121.5229},{"lat":25.0289,"lng":121.5379},{"lat":25.0266,"lng":121.5352},{"lat":25.0261,"lng":121.5374},{"lat":25.0298,"lng":121.5311},{"lat":25.0338,"lng":121.5281},{"lat":25.0352,"lng":121.5245},{"lat":25.0332,"lng":121.5244},{"lat":25.0316,"lng":121.5266},{"lat":25.0237,"lng":121.549},{"lat":25.0221,"lng":121.5484},{"lat":25.0272,"lng":121.5499},{"lat":25.0295,"lng":121.5541},{"lat":25.0293,"lng":121.5572},{"lat":25.0418,"lng":121.5383},{"lat":25.04,"lng":121.533},{"lat":25.0375,"lng":121.5352},{"lat":25.0353,"lng":121.5354},{"lat":25.037,"lng":121.5435},{"lat":25.0393,"lng":121.5383},{"lat":25.0404,"lng":121.5436},{"lat":25.0332,"lng":121.5439},{"lat":25.0336,"lng":121.5414},{"lat":25.0332,"lng":121.5464},{"lat":25.0409,"lng":121.5482},{"lat":25.0375,"lng":121.5529},{"lat":25.0333,"lng":121.5498},{"lat":25.0371,"lng":121.5517},{"lat":25.033,"lng":121.5517},{"lat":25.0446,"lng":121.5366},{"lat":25.0445,"lng":121.5395},{"lat":25.0333,"lng":121.5344},{"lat":25.0332,"lng":121.5572},{"lat":25.0351,"lng":121.5561},{"lat":25.0391,"lng":121.5569},{"lat":25.0363,"lng":121.5383},{"lat":25.0409,"lng":121.5329},{"lat":25.0424,"lng":121.5332},{"lat":25.0313,"lng":121.5434},{"lat":25.0419,"lng":121.5338},{"lat":25.042,"lng":121.5461},{"lat":25.044,"lng":121.5486},{"lat":25.0334,"lng":121.5364},{"lat":25.0328,"lng":121.5375},{"lat":25.0357,"lng":121.5451},{"lat":25.0347,"lng":121.5477},{"lat":25.0426,"lng":121.5444},{"lat":25.0415,"lng":121.5524},{"lat":25.0416,"lng":121.5494},{"lat":25.0298,"lng":121.5405},{"lat":25.0277,"lng":121.5513},{"lat":25.0247,"lng":121.5446},{"lat":25.0412,"lng":121.5575},{"lat":25.0376,"lng":121.5459},{"lat":25.033,"lng":121.5538},{"lat":25.0268,"lng":121.5467},{"lat":25.0375,"lng":121.5556},{"lat":25.0333,"lng":121.5526},{"lat":25.0287,"lng":121.549},{"lat":25.0286,"lng":121.5434},{"lat":25.0257,"lng":121.5377},{"lat":25.0122,"lng":121.5479},{"lat":25.0431,"lng":121.5431},{"lat":25.0336,"lng":121.5296},{"lat":25.0361,"lng":121.5471},{"lat":25.0155,"lng":121.5337},{"lat":25.042,"lng":121.5365},{"lat":25.0418,"lng":121.5403},{"lat":25.0174,"lng":121.5333},{"lat":25.0227,"lng":121.5341},{"lat":25.0348,"lng":121.5438},{"lat":25.0178,"lng":121.5522},{"lat":25.0173,"lng":121.549},{"lat":25.0204,"lng":121.5485},{"lat":25.0235,"lng":121.5411},{"lat":25.0205,"lng":121.5456},{"lat":25.0244,"lng":121.5491},{"lat":25.0171,"lng":121.5443},{"lat":25.0376,"lng":121.5501},{"lat":25.0446,"lng":121.5494},{"lat":25.0417,"lng":121.5454},{"lat":25.0447,"lng":121.544},{"lat":25.026,"lng":121.5345},{"lat":25.0253,"lng":121.551},{"lat":25.0333,"lng":121.5397},{"lat":25.0372,"lng":121.5494},{"lat":25.0271,"lng":121.549},{"lat":25.0371,"lng":121.5484},{"lat":25.0282,"lng":121.5486},{"lat":25.0333,"lng":121.5425},{"lat":25.0206,"lng":121.5285},{"lat":25.0346,"lng":121.5516},{"lat":25.021,"lng":121.5415},{"lat":25.03,"lng":121.5489},{"lat":25.0305,"lng":121.5247},{"lat":25.042,"lng":121.5566},{"lat":25.0401,"lng":121.5412},{"lat":25.0383,"lng":121.548},{"lat":25.0297,"lng":121.5515},{"lat":25.0227,"lng":121.5361},{"lat":25.033,"lng":121.5437},{"lat":25.0283,"lng":121.5559},{"lat":25.0103,"lng":121.54},{"lat":25.0413,"lng":121.5539},{"lat":25.0379,"lng":121.5547},{"lat":25.0253,"lng":121.5522},{"lat":25.0221,"lng":121.5268},{"lat":25.0789,"lng":121.5112},{"lat":25.0741,"lng":121.5135},{"lat":25.0772,"lng":121.5093},{"lat":25.0686,"lng":121.5107},{"lat":25.0716,"lng":121.5137},{"lat":25.0665,"lng":121.5165},{"lat":25.056,"lng":121.5089},{"lat":25.0738,"lng":121.5158},{"lat":25.0713,"lng":121.5202},{"lat":25.0722,"lng":121.5106},{"lat":25.0757,"lng":121.5186},{"lat":25.076,"lng":121.5141},{"lat":25.0745,"lng":121.52},{"lat":25.0633,"lng":121.511},{"lat":25.0633,"lng":121.5094},{"lat":25.0591,"lng":121.5103},{"lat":25.0685,"lng":121.5173},{"lat":25.0708,"lng":121.5183},{"lat":25.0631,"lng":121.5131},{"lat":25.0633,"lng":121.5116},{"lat":25.0617,"lng":121.5197},{"lat":25.0583,"lng":121.5206},{"lat":25.0499,"lng":121.5104},{"lat":25.0559,"lng":121.5137},{"lat":25.0545,"lng":121.5105},{"lat":25.0705,"lng":121.516},{"lat":25.0605,"lng":121.5134},{"lat":25.0687,"lng":121.5199},{"lat":25.0537,"lng":121.5142},{"lat":25.0685,"lng":121.5136},{"lat":25.0641,"lng":121.5182},{"lat":25.0493,"lng":121.5147},{"lat":25.0659,"lng":121.5108},{"lat":25.0521,"lng":121.5082},{"lat":25.0601,"lng":121.5173},{"lat":25.0749,"lng":121.5115},{"lat":25.065,"lng":121.5161},{"lat":25.0592,"lng":121.5137},{"lat":25.0566,"lng":121.5078},{"lat":25.0581,"lng":121.5135},{"lat":25.0632,"lng":121.5144},{"lat":25.0625,"lng":121.5184},{"lat":25.0537,"lng":121.5164},{"lat":25.0576,"lng":121.5183},{"lat":25.0565,"lng":121.517},{"lat":25.0494,"lng":121.5191},{"lat":25.0613,"lng":121.5202},{"lat":25.053,"lng":121.5194},{"lat":25.0515,"lng":121.514},{"lat":25.0659,"lng":121.5185},{"lat":25.0566,"lng":121.5083},{"lat":25.0718,"lng":121.5193},{"lat":25.0667,"lng":121.5161},{"lat":25.0488,"lng":121.5163},{"lat":25.0604,"lng":121.52},{"lat":25.0616,"lng":121.5168},{"lat":25.0609,"lng":121.5143},{"lat":25.0609,"lng":121.5113},{"lat":25.0813,"lng":121.5178},{"lat":25.0891,"lng":121.5154},{"lat":25.087,"lng":121.519},{"lat":25.0852,"lng":121.5192},{"lat":25.1028,"lng":121.5336},{"lat":25.12,"lng":121.5334},{"lat":25.1186,"lng":121.5296},{"lat":25.1163,"lng":121.5341},{"lat":25.1136,"lng":121.5372},{"lat":25.1113,"lng":121.5324},{"lat":25.1134,"lng":121.5319},{"lat":25.1201,"lng":121.5265},{"lat":25.1118,"lng":121.5259},{"lat":25.0801,"lng":121.519},{"lat":25.0799,"lng":121.5243},{"lat":25.1081,"lng":121.5304},{"lat":25.1056,"lng":121.5292},{"lat":25.104,"lng":121.5259},{"lat":25.1015,"lng":121.5283},{"lat":25.1019,"lng":121.5308},{"lat":25.083,"lng":121.5207},{"lat":25.0867,"lng":121.521},{"lat":25.0883,"lng":121.5199},{"lat":25.0848,"lng":121.5212},{"lat":25.0874,"lng":121.5227},{"lat":25.1036,"lng":121.5222},{"lat":25.1021,"lng":121.5198},{"lat":25.0829,"lng":121.5246},{"lat":25.084,"lng":121.5249},{"lat":25.0967,"lng":121.5321},{"lat":25.099,"lng":121.5302},{"lat":25.0965,"lng":121.5275},{"lat":25.0891,"lng":121.5215},{"lat":25.0916,"lng":121.5171},{"lat":25.0963,"lng":121.5145},{"lat":25.096,"lng":121.5178},{"lat":25.0962,"lng":121.5223},{"lat":25.0942,"lng":121.5283},{"lat":25.0934,"lng":121.5264},{"lat":25.0877,"lng":121.5268},{"lat":25.0943,"lng":121.517},{"lat":25.1099,"lng":121.5304},{"lat":25.1045,"lng":121.5319},{"lat":25.1023,"lng":121.5229},{"lat":25.1014,"lng":121.5358},{"lat":25.1011,"lng":121.5516},{"lat":25.0911,"lng":121.515},{"lat":25.0975,"lng":121.5404},{"lat":25.0868,"lng":121.5095},{"lat":25.085,"lng":121.5117},{"lat":25.0839,"lng":121.5117},{"lat":25.0825,"lng":121.5075},{"lat":25.1046,"lng":121.5242},{"lat":25.0882,"lng":121.5105},{"lat":25.0906,"lng":121.5014},{"lat":25.0935,"lng":121.5038},{"lat":25.1064,"lng":121.5294},{"lat":25.0902,"lng":121.5062},{"lat":25.0983,"lng":121.5479},{"lat":25.0976,"lng":121.534},{"lat":25.0931,"lng":121.5142},{"lat":25.0828,"lng":121.5122},{"lat":25.1089,"lng":121.4664},{"lat":25.103,"lng":121.483},{"lat":25.1064,"lng":121.4836},{"lat":25.1131,"lng":121.4897},{"lat":25.1026,"lng":121.4882},{"lat":25.0967,"lng":121.4971},{"lat":25.107,"lng":121.5323},{"lat":25.1104,"lng":121.5359},{"lat":25.089,"lng":121.5175},{"lat":25.1077,"lng":121.5231},{"lat":25.0933,"lng":121.5196},{"lat":25.0961,"lng":121.5301},{"lat":25.0971,"lng":121.5423},{"lat":25.0822,"lng":121.5107},{"lat":25.1131,"lng":121.5395},{"lat":25.0889,"lng":121.5031},{"lat":25.1001,"lng":121.5325},{"lat":25.0802,"lng":121.5202},{"lat":25.1045,"lng":121.5302},{"lat":25.102,"lng":121.5293},{"lat":25.0981,"lng":121.5245},{"lat":25.1241,"lng":121.53},{"lat":25.0864,"lng":121.5247},{"lat":25.1009,"lng":121.5224},{"lat":25.0796,"lng":121.5237},{"lat":25.0903,"lng":121.5019},{"lat":25.0858,"lng":121.5253},{"lat":25.1107,"lng":121.54},{"lat":25.0876,"lng":121.5118},{"lat":25.0841,"lng":121.5067},{"lat":25.0881,"lng":121.5087},{"lat":25.0891,"lng":121.5049},{"lat":25.0841,"lng":121.5234},{"lat":25.0876,"lng":121.5261},{"lat":25.0841,"lng":121.5096},{"lat":25.0847,"lng":121.5089},{"lat":25.1174,"lng":121.5347},{"lat":25.102,"lng":121.5256},{"lat":25.1059,"lng":121.5238},{"lat":25.0824,"lng":121.5231},{"lat":25.0977,"lng":121.5276},{"lat":25.0956,"lng":121.5255},{"lat":25.1034,"lng":121.5226},{"lat":25.0876,"lng":121.5271},{"lat":25.0804,"lng":121.5084},{"lat":25.0901,"lng":121.5205},{"lat":25.0818,"lng":121.5243},{"lat":25.1125,"lng":121.5291},{"lat":25.0968,"lng":121.5193},{"lat":25.1164,"lng":121.5374},{"lat":25.1158,"lng":121.5311},{"lat":25.0989,"lng":121.5183},{"lat":25.004,"lng":121.5407},{"lat":25.0027,"lng":121.5386},{"lat":25.0011,"lng":121.5392},{"lat":25.0015,"lng":121.5364},{"lat":25.0014,"lng":121.5398},{"lat":24.9962,"lng":121.5404},{"lat":24.9937,"lng":121.5412},{"lat":24.999,"lng":121.5403},{"lat":24.9981,"lng":121.5366},{"lat":25.0059,"lng":121.5501},{"lat":25.0047,"lng":121.5492},{"lat":25.0035,"lng":121.5471},{"lat":25.0022,"lng":121.5445},{"lat":24.9914,"lng":121.5401},{"lat":25.0079,"lng":121.5373},{"lat":24.9954,"lng":121.5473},{"lat":24.9912,"lng":121.5436},{"lat":24.9874,"lng":121.5773},{"lat":24.9987,"lng":121.5798},{"lat":24.998,"lng":121.5746},{"lat":24.9989,"lng":121.5677},{"lat":24.9968,"lng":121.5596},{"lat":25.0047,"lng":121.5568},{"lat":24.9998,"lng":121.5476},{"lat":24.9882,"lng":121.5553},{"lat":24.9875,"lng":121.5498},{"lat":24.9857,"lng":121.5453},{"lat":24.9886,"lng":121.5434},{"lat":24.9784,"lng":121.5555},{"lat":24.9806,"lng":121.5562},{"lat":24.9841,"lng":121.5691},{"lat":24.9847,"lng":121.5633},{"lat":24.9857,"lng":121.5674},{"lat":24.9762,"lng":121.5583},{"lat":24.9896,"lng":121.5696},{"lat":24.9872,"lng":121.5606},{"lat":24.9881,"lng":121.5636},{"lat":24.9809,"lng":121.5631},{"lat":24.9818,"lng":121.5657},{"lat":24.983,"lng":121.554},{"lat":24.9854,"lng":121.5796},{"lat":24.9864,"lng":121.5651},{"lat":24.9894,"lng":121.5665},{"lat":24.9915,"lng":121.5684},{"lat":24.9911,"lng":121.567},{"lat":24.9799,"lng":121.5675},{"lat":24.9989,"lng":121.5433},{"lat":24.9994,"lng":121.5585},{"lat":24.9958,"lng":121.555},{"lat":25.0035,"lng":121.5564},{"lat":25.0008,"lng":121.5753},{"lat":24.9884,"lng":121.5765},{"lat":24.998,"lng":121.5498},{"lat":24.9854,"lng":121.5801},{"lat":25.0011,"lng":121.5514},{"lat":24.9927,"lng":121.5587},{"lat":24.9947,"lng":121.5595},{"lat":24.987,"lng":121.5646},{"lat":24.9866,"lng":121.5707},{"lat":24.9834,"lng":121.5564},{"lat":25.0075,"lng":121.5372},{"lat":24.9977,"lng":121.5787},{"lat":24.982,"lng":121.5717},{"lat":25.0026,"lng":121.5768},{"lat":24.9981,"lng":121.5531},{"lat":25.0108,"lng":121.5364},{"lat":25.0035,"lng":121.5364},{"lat":24.9961,"lng":121.5428},{"lat":24.9966,"lng":121.5403},{"lat":25.0083,"lng":121.5342},{"lat":24.9928,"lng":121.5426},{"lat":24.9894,"lng":121.5768},{"lat":25.0074,"lng":121.5588},{"lat":24.997,"lng":121.5445},{"lat":24.9877,"lng":121.5657},{"lat":24.9894,"lng":121.5619},{"lat":24.9881,"lng":121.5472},{"lat":25.0022,"lng":121.5704},{"lat":25.002,"lng":121.5486},{"lat":24.992,"lng":121.5737},{"lat":25.0137,"lng":121.5307},{"lat":25.0147,"lng":121.5319},{"lat":25.0145,"lng":121.5344},{"lat":25.0151,"lng":121.5338},{"lat":25.0269,"lng":121.5222},{"lat":25.0255,"lng":121.5235},{"lat":25.0197,"lng":121.529},{"lat":25.0207,"lng":121.5246},{"lat":25.0228,"lng":121.5229},{"lat":25.0209,"lng":121.5205},{"lat":25.0207,"lng":121.5277},{"lat":25.021,"lng":121.5275},{"lat":25.0235,"lng":121.525},{"lat":25.0234,"lng":121.5189},{"lat":25.027,"lng":121.5216},{"lat":25.0281,"lng":121.5216},{"lat":25.027,"lng":121.5208},{"lat":25.0272,"lng":121.5166},{"lat":25.0293,"lng":121.5185},{"lat":25.0292,"lng":121.5206},{"lat":25.031,"lng":121.5221},{"lat":25.0324,"lng":121.5187},{"lat":25.0338,"lng":121.5177},{"lat":25.0312,"lng":121.5146},{"lat":25.0263,"lng":121.514},{"lat":25.0254,"lng":121.5105},{"lat":25.0264,"lng":121.5094},{"lat":25.026,"lng":121.5081},{"lat":25.0289,"lng":121.5052},{"lat":25.0302,"lng":121.509},{"lat":25.0313,"lng":121.5075},{"lat":25.016,"lng":121.5256},{"lat":25.0354,"lng":121.5083},{"lat":25.0357,"lng":121.5101},{"lat":25.0391,"lng":121.5138},{"lat":25.0394,"lng":121.5077},{"lat":25.0437,"lng":121.5285},{"lat":25.0453,"lng":121.5222},{"lat":25.0419,"lng":121.5246},{"lat":25.0391,"lng":121.5216},{"lat":25.0379,"lng":121.5199},{"lat":25.0357,"lng":121.5241},{"lat":25.0443,"lng":121.5234},{"lat":25.0365,"lng":121.5095},{"lat":25.0379,"lng":121.5085},{"lat":25.0416,"lng":121.5084},{"lat":25.0413,"lng":121.5112},{"lat":25.0371,"lng":121.5125},{"lat":25.0355,"lng":121.5133},{"lat":25.0376,"lng":121.5171},{"lat":25.0459,"lng":121.5307},{"lat":25.0352,"lng":121.5064},{"lat":25.0441,"lng":121.5102},{"lat":25.0453,"lng":121.5094},{"lat":25.0468,"lng":121.5099},{"lat":25.043,"lng":121.5164},{"lat":25.0103,"lng":121.5331},{"lat":25.0203,"lng":121.523},{"lat":25.0418,"lng":121.5187},{"lat":25.0338,"lng":121.5304},{"lat":25.0484,"lng":121.5199},{"lat":25.0313,"lng":121.5052},{"lat":25.0423,"lng":121.5322},{"lat":25.0448,"lng":121.5327},{"lat":25.045,"lng":121.5197},{"lat":25.0353,"lng":121.5168},{"lat":25.0455,"lng":121.5274},{"lat":25.0227,"lng":121.5236},{"lat":25.0344,"lng":121.5272},{"lat":25.0409,"lng":121.5221},{"lat":25.0402,"lng":121.5256},{"lat":25.0361,"lng":121.5166},{"lat":25.0482,"lng":121.519},{"lat":25.0478,"lng":121.5204},{"lat":25.0424,"lng":121.5086},{"lat":25.0383,"lng":121.5152},{"lat":25.0385,"lng":121.5129},{"lat":25.0181,"lng":121.5275},{"lat":25.0405,"lng":121.524},{"lat":25.0314,"lng":121.5194},{"lat":25.0133,"lng":121.53},{"lat":25.0389,"lng":121.5223},{"lat":25.0418,"lng":121.5087},{"lat":25.0384,"lng":121.528},{"lat":25.0375,"lng":121.528},{"lat":25.0385,"lng":121.525},{"lat":25.0282,"lng":121.5111},{"lat":25.0299,"lng":121.5103},{"lat":25.0316,"lng":121.5146},{"lat":25.0466,"lng":121.5238},{"lat":25.046,"lng":121.5258},{"lat":25.0469,"lng":121.5221},{"lat":25.0427,"lng":121.5321},{"lat":25.0411,"lng":121.5327},{"lat":25.0407,"lng":121.5159},{"lat":25.0446,"lng":121.5188},{"lat":25.0425,"lng":121.5227},{"lat":25.0384,"lng":121.5234},{"lat":25.027,"lng":121.5069},{"lat":25.0337,"lng":121.5107},{"lat":25.0447,"lng":121.5236},{"lat":25.0379,"lng":121.519},{"lat":25.0472,"lng":121.5127},{"lat":25.0413,"lng":121.527},{"lat":25.0381,"lng":121.5285},{"lat":25.0415,"lng":121.5287},{"lat":25.0251,"lng":121.5165},{"lat":25.039,"lng":121.5306},{"lat":25.0321,"lng":121.5186},{"lat":25.0248,"lng":121.5197},{"lat":25.0268,"lng":121.5174},{"lat":25.0825,"lng":121.54},{"lat":25.0781,"lng":121.5295},{"lat":25.0803,"lng":121.5625},{"lat":25.0852,"lng":121.5375},{"lat":25.0826,"lng":121.5446},{"lat":25.0801,"lng":121.5523},{"lat":25.0847,"lng":121.5497},{"lat":25.084,"lng":121.5554},{"lat":25.0799,"lng":121.5561},{"lat":25.0798,"lng":121.5581},{"lat":25.0792,"lng":121.5473},{"lat":25.0459,"lng":121.5438},{"lat":25.0518,"lng":121.5422},{"lat":25.0483,"lng":121.5347},{"lat":25.0486,"lng":121.5293},{"lat":25.048,"lng":121.5244},{"lat":25.0519,"lng":121.5277},{"lat":25.0532,"lng":121.5315},{"lat":25.0502,"lng":121.5327},{"lat":25.0564,"lng":121.5275},{"lat":25.0664,"lng":121.5374},{"lat":25.0578,"lng":121.5369},{"lat":25.0561,"lng":121.5417},{"lat":25.0611,"lng":121.5441},{"lat":25.0604,"lng":121.5408},{"lat":25.0547,"lng":121.5369},{"lat":25.0521,"lng":121.5368},{"lat":25.0525,"lng":121.5332},{"lat":25.0476,"lng":121.5404},{"lat":25.056,"lng":121.5317},{"lat":25.0471,"lng":121.5277},{"lat":25.047,"lng":121.5374},{"lat":25.0614,"lng":121.5393},{"lat":25.0622,"lng":121.5411},{"lat":25.0625,"lng":121.5271},{"lat":25.0599,"lng":121.5333},{"lat":25.0653,"lng":121.5256},{"lat":25.0628,"lng":121.527},{"lat":25.0649,"lng":121.5245},{"lat":25.0665,"lng":121.5276},{"lat":25.0685,"lng":121.5256},{"lat":25.0699,"lng":121.5229},{"lat":25.0682,"lng":121.5226},{"lat":25.0498,"lng":121.5285},{"lat":25.052,"lng":121.5256},{"lat":25.0534,"lng":121.5289},{"lat":25.0558,"lng":121.5282},{"lat":25.0668,"lng":121.5421},{"lat":25.065,"lng":121.5437},{"lat":25.0642,"lng":121.5404},{"lat":25.0625,"lng":121.5376},{"lat":25.0659,"lng":121.5334},{"lat":25.0653,"lng":121.5318},{"lat":25.066,"lng":121.5304},{"lat":25.0683,"lng":121.5328},{"lat":25.0715,"lng":121.5306},{"lat":25.0618,"lng":121.5226},{"lat":25.0457,"lng":121.5351},{"lat":25.0523,"lng":121.5218},{"lat":25.0642,"lng":121.522},{"lat":25.0684,"lng":121.5303},{"lat":25.0587,"lng":121.5331},{"lat":25.055,"lng":121.5254},{"lat":25.065,"lng":121.5368},{"lat":25.0498,"lng":121.5331},{"lat":25.0484,"lng":121.5367},{"lat":25.0461,"lng":121.5319},{"lat":25.0627,"lng":121.5306},{"lat":25.0651,"lng":121.5224},{"lat":25.0557,"lng":121.5217},{"lat":25.0568,"lng":121.5319},{"lat":25.0573,"lng":121.5302},{"lat":25.0581,"lng":121.5289},{"lat":25.0579,"lng":121.5424},{"lat":25.0603,"lng":121.5299},{"lat":25.0561,"lng":121.5229},{"lat":25.0587,"lng":121.5249},{"lat":25.0596,"lng":121.5274},{"lat":25.0734,"lng":121.5399},{"lat":25.0727,"lng":121.5373},{"lat":25.0681,"lng":121.5367},{"lat":25.0562,"lng":121.5395},{"lat":25.066,"lng":121.5412},{"lat":25.0614,"lng":121.523},{"lat":25.083,"lng":121.5604},{"lat":25.0616,"lng":121.5244},{"lat":25.0519,"lng":121.5352},{"lat":25.0521,"lng":121.5401},{"lat":25.0639,"lng":121.5192},{"lat":25.0815,"lng":121.5465},{"lat":25.0801,"lng":121.5471},{"lat":25.0512,"lng":121.5331},{"lat":25.0786,"lng":121.5556},{"lat":25.0579,"lng":121.5311},{"lat":25.0576,"lng":121.533},{"lat":25.0528,"lng":121.5301},{"lat":25.0548,"lng":121.5303},{"lat":25.0549,"lng":121.5314},{"lat":25.0522,"lng":121.5328},{"lat":25.0522,"lng":121.5317},{"lat":25.055,"lng":121.5329},{"lat":25.078,"lng":121.5351},{"lat":25.0687,"lng":121.52},{"lat":25.0649,"lng":121.5278},{"lat":25.0653,"lng":121.5285},{"lat":25.0793,"lng":121.5467},{"lat":25.0798,"lng":121.5524},{"lat":25.0624,"lng":121.5301},{"lat":25.0547,"lng":121.5403},{"lat":25.0631,"lng":121.5278},{"lat":25.0548,"lng":121.5369},{"lat":25.0643,"lng":121.5335},{"lat":25.0706,"lng":121.5233},{"lat":25.0848,"lng":121.5379},{"lat":25.0782,"lng":121.5618},{"lat":25.0522,"lng":121.5258},{"lat":25.0783,"lng":121.5534},{"lat":25.0534,"lng":121.5401},{"lat":25.0682,"lng":121.5277},{"lat":25.0525,"lng":121.5426},{"lat":25.0448,"lng":121.5366},{"lat":25.05,"lng":121.5404},{"lat":25.0843,"lng":121.5476},{"lat":25.052,"lng":121.5433},{"lat":25.0623,"lng":121.537},{"lat":25.0669,"lng":121.5257},{"lat":25.0706,"lng":121.5281},{"lat":25.047,"lng":121.5307},{"lat":25.0553,"lng":121.5277},{"lat":25.0857,"lng":121.5555},{"lat":25.0827,"lng":121.5562},{"lat":25.0543,"lng":121.539},{"lat":25.0542,"lng":121.5433},{"lat":25.0642,"lng":121.5373},{"lat":25.0568,"lng":121.5227},{"lat":25.0448,"lng":121.5421},{"lat":25.0481,"lng":121.5217},{"lat":25.0912,"lng":121.5596},{"lat":25.0838,"lng":121.5621},{"lat":25.0798,"lng":121.5645},{"lat":25.0828,"lng":121.5645},{"lat":25.0864,"lng":121.5609},{"lat":25.0871,"lng":121.5641},{"lat":25.0864,"lng":121.5657},{"lat":25.0831,"lng":121.5716},{"lat":25.084,"lng":121.5773},{"lat":25.0852,"lng":121.5746},{"lat":25.088,"lng":121.5996},{"lat":25.0702,"lng":121.6159},{"lat":25.0718,"lng":121.6149},{"lat":25.0745,"lng":121.5739},{"lat":25.0752,"lng":121.5772},{"lat":25.084,"lng":121.6018},{"lat":25.0796,"lng":121.5934},{"lat":25.0786,"lng":121.5918},{"lat":25.0828,"lng":121.5669},{"lat":25.082,"lng":121.5672},{"lat":25.0793,"lng":121.5687},{"lat":25.083,"lng":121.5752},{"lat":25.086,"lng":121.572},{"lat":25.0844,"lng":121.5948},{"lat":25.0878,"lng":121.5923},{"lat":25.0878,"lng":121.5879},{"lat":25.0784,"lng":121.5846},{"lat":25.077,"lng":121.5876},{"lat":25.075,"lng":121.5837},{"lat":25.0776,"lng":121.5838},{"lat":25.0778,"lng":121.5796},{"lat":25.0754,"lng":121.5808},{"lat":25.0557,"lng":121.5849},{"lat":25.0559,"lng":121.5799},{"lat":25.0577,"lng":121.5816},{"lat":25.0565,"lng":121.5834},{"lat":25.0539,"lng":121.5808},{"lat":25.0692,"lng":121.589},{"lat":25.0701,"lng":121.6205},{"lat":25.0618,"lng":121.5945},{"lat":25.0626,"lng":121.5861},{"lat":25.0583,"lng":121.5871},{"lat":25.0606,"lng":121.5911},{"lat":25.0683,"lng":121.5832},{"lat":25.0734,"lng":121.5795},{"lat":25.0685,"lng":121.5781},{"lat":25.0671,"lng":121.58},{"lat":25.0629,"lng":121.575},{"lat":25.0559,"lng":121.5786},{"lat":25.053,"lng":121.5759},{"lat":25.0715,"lng":121.5899},{"lat":25.0688,"lng":121.5927},{"lat":25.0674,"lng":121.5975},{"lat":25.0725,"lng":121.608},{"lat":25.0733,"lng":121.6022},{"lat":25.0733,"lng":121.5983},{"lat":25.0799,"lng":121.5829},{"lat":25.0832,"lng":121.5811},{"lat":25.0836,"lng":121.5853},{"lat":25.0816,"lng":121.5889},{"lat":25.0835,"lng":121.5945},{"lat":25.079,"lng":121.5992},{"lat":25.0779,"lng":121.5935},{"lat":25.0666,"lng":121.6136},{"lat":25.0767,"lng":121.6171},{"lat":25.0872,"lng":121.6231},{"lat":25.0797,"lng":121.5758},{"lat":25.0733,"lng":121.6196},{"lat":25.0626,"lng":121.5933},{"lat":25.0621,"lng":121.6035},{"lat":25.0693,"lng":121.6102},{"lat":25.0716,"lng":121.6094},{"lat":25.0571,"lng":121.5766},{"lat":25.055,"lng":121.5782},{"lat":25.0652,"lng":121.5956},{"lat":25.0671,"lng":121.6006},{"lat":25.0685,"lng":121.6153},{"lat":25.0837,"lng":121.5941},{"lat":25.0761,"lng":121.5749},{"lat":25.073,"lng":121.576},{"lat":25.0855,"lng":121.5908},{"lat":25.0794,"lng":121.5954},{"lat":25.0757,"lng":121.6118},{"lat":25.0741,"lng":121.6107},{"lat":25.0751,"lng":121.6086},{"lat":25.0589,"lng":121.5735},{"lat":25.0668,"lng":121.5907},{"lat":25.0588,"lng":121.5806},{"lat":25.0646,"lng":121.5826},{"lat":25.0811,"lng":121.5921},{"lat":25.0815,"lng":121.5976},{"lat":25.0685,"lng":121.5956},{"lat":25.0643,"lng":121.594},{"lat":25.0785,"lng":121.5749},{"lat":25.0884,"lng":121.5612},{"lat":25.0845,"lng":121.584},{"lat":25.0606,"lng":121.5829},{"lat":25.0602,"lng":121.5755},{"lat":25.0601,"lng":121.6014},{"lat":25.0743,"lng":121.5858},{"lat":25.0593,"lng":121.5862},{"lat":25.085,"lng":121.5637},{"lat":25.0694,"lng":121.5869},{"lat":25.0717,"lng":121.5812},{"lat":25.0666,"lng":121.6135},{"lat":25.0687,"lng":121.5892},{"lat":25.0863,"lng":121.5914},{"lat":25.0704,"lng":121.6035},{"lat":25.0768,"lng":121.5743},{"lat":25.0778,"lng":121.5756},{"lat":25.0719,"lng":121.6196},{"lat":25.0812,"lng":121.5707},{"lat":25.0782,"lng":121.5898},{"lat":25.0878,"lng":121.5587},{"lat":25.0724,"lng":121.5742},{"lat":25.0739,"lng":121.6154},{"lat":25.0667,"lng":121.5891},{"lat":25.0785,"lng":121.6167},{"lat":25.0754,"lng":121.6203},{"lat":25.08,"lng":121.5757},{"lat":25.0606,"lng":121.5866},{"lat":25.0636,"lng":121.5861},{"lat":25.0632,"lng":121.5768},{"lat":25.0677,"lng":121.5746},{"lat":25.0897,"lng":121.5835},{"lat":25.0842,"lng":121.5966},{"lat":25.0735,"lng":121.6126},{"lat":25.0823,"lng":121.5909},{"lat":25.0664,"lng":121.6173},{"lat":25.0846,"lng":121.5794},{"lat":25.0786,"lng":121.583},{"lat":25.0627,"lng":121.5743},{"lat":25.0613,"lng":121.582},{"lat":25.0721,"lng":121.6099},{"lat":25.0802,"lng":121.5632},{"lat":25.0816,"lng":121.5623},{"lat":25.0807,"lng":121.5656},{"lat":25.082,"lng":121.5686},{"lat":25.0675,"lng":121.5778},{"lat":25.0689,"lng":121.5771},{"lat":25.0735,"lng":121.5785},{"lat":25.0782,"lng":121.571},{"lat":25.0773,"lng":121.5727},{"lat":25.079,"lng":121.5737},{"lat":25.0805,"lng":121.5736},{"lat":25.068,"lng":121.5849},{"lat":25.0661,"lng":121.5821},{"lat":25.0641,"lng":121.5779},{"lat":25.0615,"lng":121.5781},{"lat":25.0815,"lng":121.5649},{"lat":25.082,"lng":121.563},{"lat":25.0832,"lng":121.5615},{"lat":25.0794,"lng":121.5728},{"lat":25.1168,"lng":121.5048},{"lat":25.1098,"lng":121.4989},{"lat":25.1136,"lng":121.5225},{"lat":25.109,"lng":121.5194},{"lat":25.1079,"lng":121.5146},{"lat":25.1242,"lng":121.5261},{"lat":25.1174,"lng":121.4629},{"lat":25.1188,"lng":121.4691},{"lat":25.1203,"lng":121.4665},{"lat":25.1315,"lng":121.4737},{"lat":25.124,"lng":121.4671},{"lat":25.1262,"lng":121.4674},{"lat":25.128,"lng":121.4678},{"lat":25.1231,"lng":121.4709},{"lat":25.1378,"lng":121.4863},{"lat":25.1367,"lng":121.4816},{"lat":25.1348,"lng":121.4961},{"lat":25.14,"lng":121.4897},{"lat":25.1378,"lng":121.4934},{"lat":25.1458,"lng":121.493},{"lat":25.1369,"lng":121.4999},{"lat":25.1373,"lng":121.5034},{"lat":25.1319,"lng":121.499},{"lat":25.1263,"lng":121.501},{"lat":25.123,"lng":121.5016},{"lat":25.1273,"lng":121.5068},{"lat":25.1281,"lng":121.4978},{"lat":25.118,"lng":121.5034},{"lat":25.1267,"lng":121.5037},{"lat":25.1209,"lng":121.5052},{"lat":25.1167,"lng":121.5096},{"lat":25.1191,"lng":121.5122},{"lat":25.1145,"lng":121.5157},{"lat":25.1175,"lng":121.5166},{"lat":25.1159,"lng":121.5143},{"lat":25.1175,"lng":121.5219},{"lat":25.1144,"lng":121.5131},{"lat":25.1186,"lng":121.5235},{"lat":25.1198,"lng":121.5042},{"lat":25.1159,"lng":121.5058},{"lat":25.1109,"lng":121.5138},{"lat":25.1137,"lng":121.5244},{"lat":25.1047,"lng":121.5165},{"lat":25.125,"lng":121.4716},{"lat":25.1354,"lng":121.478},{"lat":25.1208,"lng":121.5135},{"lat":25.1367,"lng":121.5022},{"lat":25.1387,"lng":121.5021},{"lat":25.1127,"lng":121.5092},{"lat":25.1142,"lng":121.5077},{"lat":25.11,"lng":121.5184},{"lat":25.131,"lng":121.5041},{"lat":25.1003,"lng":121.506},{"lat":25.1432,"lng":121.4962},{"lat":25.1007,"lng":121.5111},{"lat":25.1406,"lng":121.4992},{"lat":25.1405,"lng":121.5045},{"lat":25.1153,"lng":121.5174},{"lat":25.1229,"lng":121.5037},{"lat":25.1419,"lng":121.5083},{"lat":25.1253,"lng":121.5057},{"lat":25.1186,"lng":121.5185},{"lat":25.1286,"lng":121.5033},{"lat":25.1094,"lng":121.5125},{"lat":25.1377,"lng":121.5014},{"lat":25.136,"lng":121.497},{"lat":25.1343,"lng":121.5023},{"lat":25.1276,"lng":121.4721},{"lat":25.1432,"lng":121.4909},{"lat":25.1368,"lng":121.5079},{"lat":25.1439,"lng":121.4945},{"lat":25.1326,"lng":121.4986},{"lat":25.1188,"lng":121.5192},{"lat":25.1208,"lng":121.5073},{"lat":25.1304,"lng":121.5002},{"lat":25.1308,"lng":121.4735},{"lat":25.1017,"lng":121.5126},{"lat":25.132,"lng":121.4982},{"lat":25.1039,"lng":121.5124},{"lat":25.1259,"lng":121.511},{"lat":25.1371,"lng":121.4971},{"lat":25.0499,"lng":121.5778},{"lat":25.0501,"lng":121.572},{"lat":25.055,"lng":121.5688},{"lat":25.0488,"lng":121.5609},{"lat":25.0514,"lng":121.5628},{"lat":25.0515,"lng":121.5636},{"lat":25.0494,"lng":121.558},{"lat":25.0515,"lng":121.5646},{"lat":25.0549,"lng":121.567},{"lat":25.0622,"lng":121.5456},{"lat":25.0637,"lng":121.5477},{"lat":25.0609,"lng":121.5473},{"lat":25.058,"lng":121.549},{"lat":25.0546,"lng":121.5449},{"lat":25.0619,"lng":121.5633},{"lat":25.0591,"lng":121.5631},{"lat":25.0516,"lng":121.5512},{"lat":25.0483,"lng":121.5524},{"lat":25.0563,"lng":121.5529},{"lat":25.0612,"lng":121.551},{"lat":25.062,"lng":121.5602},{"lat":25.0592,"lng":121.5689},{"lat":25.0583,"lng":121.555},{"lat":25.0613,"lng":121.5667},{"lat":25.0446,"lng":121.5525},{"lat":25.0449,"lng":121.5499},{"lat":25.0542,"lng":121.5563},{"lat":25.0553,"lng":121.559},{"lat":25.0543,"lng":121.5654},{"lat":25.0621,"lng":121.5547},{"lat":25.0484,"lng":121.5659},{"lat":25.0471,"lng":121.5578},{"lat":25.0457,"lng":121.5566},{"lat":25.0535,"lng":121.5544},{"lat":25.0477,"lng":121.5448},{"lat":25.0514,"lng":121.5572},{"lat":25.0585,"lng":121.5595},{"lat":25.0541,"lng":121.561},{"lat":25.0561,"lng":121.5635},{"lat":25.0476,"lng":121.5611},{"lat":25.0452,"lng":121.5466},{"lat":25.0528,"lng":121.5448},{"lat":25.0517,"lng":121.5451},{"lat":25.0648,"lng":121.5679},{"lat":25.0495,"lng":121.5494},{"lat":25.0518,"lng":121.5535},{"lat":25.0536,"lng":121.5487},{"lat":25.0515,"lng":121.5768},{"lat":25.0501,"lng":121.5764},{"lat":25.062,"lng":121.5447},{"lat":25.0516,"lng":121.5591},{"lat":25.0624,"lng":121.5683},{"lat":25.052,"lng":121.5681},{"lat":25.0541,"lng":121.5641},{"lat":25.0538,"lng":121.5589},{"lat":25.0463,"lng":121.5542},{"lat":25.0517,"lng":121.5561},{"lat":25.0495,"lng":121.5526},{"lat":25.0557,"lng":121.5671},{"lat":25.0515,"lng":121.5653},{"lat":25.0496,"lng":121.5775},{"lat":25.0572,"lng":121.5571},{"lat":25.0523,"lng":121.5493},{"lat":25.048,"lng":121.5486},{"lat":25.0615,"lng":121.5633},{"lat":25.0498,"lng":121.5719},{"lat":25.0545,"lng":121.5464},{"lat":25.0494,"lng":121.575},{"lat":25.0501,"lng":121.5769},{"lat":25.0515,"lng":121.5524},{"lat":25.0518,"lng":121.5521},{"lat":25.0542,"lng":121.5491},{"lat":25.0576,"lng":121.5444},{"lat":25.0444,"lng":121.554},{"lat":25.0545,"lng":121.5542},{"lat":25.0513,"lng":121.5643},{"lat":25.0514,"lng":121.5706},{"lat":25.0643,"lng":121.5454},{"lat":25.0459,"lng":121.5923},{"lat":25.0413,"lng":121.5909},{"lat":25.0501,"lng":121.5924},{"lat":25.0492,"lng":121.5883},{"lat":25.0444,"lng":121.5813},{"lat":25.0484,"lng":121.5815},{"lat":25.0461,"lng":121.5832},{"lat":25.0459,"lng":121.5882},{"lat":25.0428,"lng":121.5861},{"lat":25.0424,"lng":121.6168},{"lat":25.0405,"lng":121.6137},{"lat":25.0476,"lng":121.6115},{"lat":25.0547,"lng":121.6167},{"lat":25.047,"lng":121.6137},{"lat":25.045,"lng":121.6178},{"lat":25.0414,"lng":121.6191},{"lat":25.0356,"lng":121.6141},{"lat":25.054,"lng":121.6133},{"lat":25.0593,"lng":121.6168},{"lat":25.0567,"lng":121.6114},{"lat":25.0563,"lng":121.607},{"lat":25.0548,"lng":121.6087},{"lat":25.0572,"lng":121.5979},{"lat":25.0544,"lng":121.5942},{"lat":25.0525,"lng":121.6092},{"lat":25.052,"lng":121.6074},{"lat":25.0519,"lng":121.6064},{"lat":25.0551,"lng":121.6028},{"lat":25.0339,"lng":121.6098},{"lat":25.0468,"lng":121.617},{"lat":25.048,"lng":121.6159},{"lat":25.0534,"lng":121.5995},{"lat":25.0577,"lng":121.604},{"lat":25.0521,"lng":121.5984},{"lat":25.0533,"lng":121.6066},{"lat":25.0527,"lng":121.6128},{"lat":25.0563,"lng":121.6137},{"lat":25.0583,"lng":121.6142},{"lat":25.0359,"lng":121.6169},{"lat":25.0521,"lng":121.5905},{"lat":25.0528,"lng":121.5928},{"lat":25.0523,"lng":121.5815},{"lat":25.0529,"lng":121.586},{"lat":25.0517,"lng":121.5828},{"lat":25.0506,"lng":121.5803},{"lat":25.0451,"lng":121.5836},{"lat":25.0419,"lng":121.5849},{"lat":25.0388,"lng":121.5879},{"lat":25.0615,"lng":121.6138},{"lat":25.0594,"lng":121.6107},{"lat":25.0529,"lng":121.6055},{"lat":25.0401,"lng":121.6177},{"lat":25.0616,"lng":121.6127},{"lat":25.0627,"lng":121.616},{"lat":25.0585,"lng":121.6098},{"lat":25.0544,"lng":121.6181},{"lat":25.0517,"lng":121.6169},{"lat":25.0399,"lng":121.6201},{"lat":25.0571,"lng":121.5927},{"lat":25.0582,"lng":121.5937},{"lat":25.0546,"lng":121.6185},{"lat":25.0554,"lng":121.6184},{"lat":25.0467,"lng":121.5873},{"lat":25.0413,"lng":121.5932},{"lat":25.0497,"lng":121.5803},{"lat":25.0483,"lng":121.5943},{"lat":25.0537,"lng":121.5997},{"lat":25.0523,"lng":121.6077},{"lat":25.0534,"lng":121.6063},{"lat":25.0418,"lng":121.5874},{"lat":25.05,"lng":121.5838},{"lat":25.0388,"lng":121.593},{"lat":25.0407,"lng":121.5888},{"lat":25.0554,"lng":121.5892},{"lat":25.0456,"lng":121.5863},{"lat":25.0555,"lng":121.6165},{"lat":25.0383,"lng":121.6227},{"lat":25.0539,"lng":121.5912},{"lat":25.0507,"lng":121.5943},{"lat":25.0492,"lng":121.5891},{"lat":25.0413,"lng":121.6118},{"lat":25.0546,"lng":121.5878},{"lat":25.0538,"lng":121.5864},{"lat":25.0488,"lng":121.5874},{"lat":25.053,"lng":121.6171},{"lat":25.0473,"lng":121.5861},{"lat":25.058,"lng":121.6219},{"lat":25.0204,"lng":121.5577},{"lat":25.0256,"lng":121.5541},{"lat":25.0281,"lng":121.5567},{"lat":25.0132,"lng":121.5633},{"lat":25.0155,"lng":121.5613},{"lat":25.027,"lng":121.5584},{"lat":25.0267,"lng":121.5618},{"lat":25.0287,"lng":121.5593},{"lat":25.0316,"lng":121.574},{"lat":25.0322,"lng":121.5697},{"lat":25.0286,"lng":121.5698},{"lat":25.0268,"lng":121.5688},{"lat":25.0362,"lng":121.5698},{"lat":25.0329,"lng":121.5687},{"lat":25.0347,"lng":121.573},{"lat":25.0382,"lng":121.575},{"lat":25.0287,"lng":121.5667},{"lat":25.0319,"lng":121.5668},{"lat":25.0328,"lng":121.5634},{"lat":25.03,"lng":121.5629},{"lat":25.0328,"lng":121.5576},{"lat":25.0345,"lng":121.5576},{"lat":25.0374,"lng":121.5602},{"lat":25.0396,"lng":121.572},{"lat":25.0342,"lng":121.5764},{"lat":25.0389,"lng":121.5791},{"lat":25.0347,"lng":121.5802},{"lat":25.033,"lng":121.581},{"lat":25.038,"lng":121.5654},{"lat":25.0361,"lng":121.5653},{"lat":25.0363,"lng":121.5638},{"lat":25.039,"lng":121.5637},{"lat":25.036,"lng":121.5622},{"lat":25.0331,"lng":121.5662},{"lat":25.0334,"lng":121.5633},{"lat":25.0427,"lng":121.5811},{"lat":25.0348,"lng":121.5687},{"lat":25.0385,"lng":121.5862},{"lat":25.0384,"lng":121.5836},{"lat":25.0392,"lng":121.5665},{"lat":25.0401,"lng":121.5682},{"lat":25.0463,"lng":121.5704},{"lat":25.0239,"lng":121.5698},{"lat":25.0193,"lng":121.571},{"lat":25.0477,"lng":121.569},{"lat":25.0473,"lng":121.5721},{"lat":25.0489,"lng":121.5784},{"lat":25.048,"lng":121.5743},{"lat":25.0455,"lng":121.5721},{"lat":25.0297,"lng":121.5577},{"lat":25.0493,"lng":121.5721},{"lat":25.0433,"lng":121.5638},{"lat":25.03,"lng":121.5576},{"lat":25.0411,"lng":121.5629},{"lat":25.0213,"lng":121.5703},{"lat":25.0439,"lng":121.5818},{"lat":25.0452,"lng":121.5771},{"lat":25.0434,"lng":121.5754},{"lat":25.0456,"lng":121.5755},{"lat":25.0462,"lng":121.5777},{"lat":25.0432,"lng":121.5779},{"lat":25.0329,"lng":121.5712},{"lat":25.0366,"lng":121.5735},{"lat":25.0351,"lng":121.5637},{"lat":25.0383,"lng":121.5762},{"lat":25.0419,"lng":121.572},{"lat":25.0452,"lng":121.567},{"lat":25.0405,"lng":121.5754},{"lat":25.0261,"lng":121.5631},{"lat":25.0359,"lng":121.5791},{"lat":25.0377,"lng":121.5612},{"lat":25.0369,"lng":121.5754},{"lat":25.0332,"lng":121.5587},{"lat":25.0327,"lng":121.5616},{"lat":25.0224,"lng":121.5627},{"lat":25.0426,"lng":121.5838},{"lat":25.0393,"lng":121.5875},{"lat":25.0366,"lng":121.5687},{"lat":25.034,"lng":121.566},{"lat":25.0321,"lng":121.5597},{"lat":25.0298,"lng":121.5642},{"lat":25.0408,"lng":121.5679},{"lat":25.0472,"lng":121.5806},{"lat":25.0231,"lng":121.5704},{"lat":25.0247,"lng":121.5674},{"lat":25.0409,"lng":121.5705},{"lat":25.032,"lng":121.5615},{"lat":25.0305,"lng":121.5684},{"lat":25.0332,"lng":121.5743},{"lat":25.0415,"lng":121.5673},{"lat":25.0233,"lng":121.5633},{"lat":25.0261,"lng":121.5577},{"lat":25.0259,"lng":121.5607},{"lat":25.0219,"lng":121.5553},{"lat":25.0236,"lng":121.4953},{"lat":25.0216,"lng":121.496},{"lat":25.0197,"lng":121.4973},{"lat":25.0249,"lng":121.509},{"lat":25.0244,"lng":121.5107},{"lat":25.023,"lng":121.5084},{"lat":25.0248,"lng":121.5075},{"lat":25.0259,"lng":121.5065},{"lat":25.0241,"lng":121.5029},{"lat":25.0208,"lng":121.5054},{"lat":25.0296,"lng":121.5026},{"lat":25.0258,"lng":121.5025},{"lat":25.0312,"lng":121.5012},{"lat":25.0312,"lng":121.5034},{"lat":25.033,"lng":121.5016},{"lat":25.0226,"lng":121.4981},{"lat":25.0169,"lng":121.4953},{"lat":25.0233,"lng":121.4926},{"lat":25.0252,"lng":121.496},{"lat":25.0274,"lng":121.4962},{"lat":25.0327,"lng":121.4976},{"lat":25.0267,"lng":121.4918},{"lat":25.0328,"lng":121.4891},{"lat":25.034,"lng":121.4903},{"lat":25.0339,"lng":121.4929},{"lat":25.032,"lng":121.4913},{"lat":25.0306,"lng":121.4902},{"lat":25.0338,"lng":121.4946},{"lat":25.0321,"lng":121.495},{"lat":25.0202,"lng":121.5038},{"lat":25.0466,"lng":121.5072},{"lat":25.0444,"lng":121.5054},{"lat":25.0417,"lng":121.4999},{"lat":25.0437,"lng":121.5022},{"lat":25.041,"lng":121.5077},{"lat":25.0377,"lng":121.5066},{"lat":25.0354,"lng":121.4994},{"lat":25.0355,"lng":121.4954},{"lat":25.0385,"lng":121.4988},{"lat":25.0379,"lng":121.5018},{"lat":25.0336,"lng":121.5032},{"lat":25.0339,"lng":121.5012},{"lat":25.0351,"lng":121.502},{"lat":25.0445,"lng":121.5031},{"lat":25.0455,"lng":121.5032},{"lat":25.0434,"lng":121.5084},{"lat":25.0403,"lng":121.502},{"lat":25.0238,"lng":121.4999},{"lat":25.0253,"lng":121.4996},{"lat":25.0352,"lng":121.4905},{"lat":25.0312,"lng":121.4886},{"lat":25.0271,"lng":121.4977},{"lat":25.0361,"lng":121.4916},{"lat":25.0372,"lng":121.4952},{"lat":25.0329,"lng":121.493},{"lat":25.0303,"lng":121.4923},{"lat":25.018,"lng":121.4999},{"lat":25.0286,"lng":121.4891},{"lat":25.0365,"lng":121.5049},{"lat":25.0478,"lng":121.5061},{"lat":25.0381,"lng":121.5036},{"lat":25.0293,"lng":121.4994},{"lat":25.0227,"lng":121.5027},{"lat":25.0355,"lng":121.5003},{"lat":25.0287,"lng":121.4916},{"lat":25.0197,"lng":121.4992},{"lat":25.0277,"lng":121.4913},{"lat":25.0198,"lng":121.5009},{"lat":25.0149,"lng":121.5304},{"lat":25.0147,"lng":121.5292},{"lat":25.0141,"lng":121.53},{"lat":25.0139,"lng":121.5289},{"lat":25.0153,"lng":121.5301},{"lat":25.0173,"lng":121.5453},{"lat":25.0141,"lng":121.5376},{"lat":25.0184,"lng":121.534},{"lat":25.0135,"lng":121.5367},{"lat":25.0176,"lng":121.5384},{"lat":25.0155,"lng":121.5344},{"lat":25.0194,"lng":121.539},{"lat":25.0185,"lng":121.5376},{"lat":25.0162,"lng":121.5425},{"lat":25.0186,"lng":121.5406},{"lat":25.0211,"lng":121.5378},{"lat":25.0194,"lng":121.5404},{"lat":25.0179,"lng":121.5358},{"lat":25.0163,"lng":121.5353},{"lat":25.0167,"lng":121.5372},{"lat":25.0198,"lng":121.5358},{"lat":25.016,"lng":121.5379},{"lat":25.0157,"lng":121.5379},{"lat":25.0151,"lng":121.5379},{"lat":25.0134,"lng":121.538},{"lat":25.016,"lng":121.5363},{"lat":25.0175,"lng":121.544},{"lat":25.017,"lng":121.5357},{"lat":25.0216,"lng":121.5363},{"lat":25.0205,"lng":121.5414},{"lat":25.0199,"lng":121.5417},{"lat":25.0207,"lng":121.5391},{"lat":25.0156,"lng":121.5358},{"lat":25.0204,"lng":121.5399},{"lat":25.0188,"lng":121.5387},{"lat":25.0155,"lng":121.5383},{"lat":25.0176,"lng":121.54},{"lat":25.0192,"lng":121.5419},{"lat":25.0189,"lng":121.536},{"lat":25.017,"lng":121.5389},{"lat":25.017,"lng":121.5345},{"lat":25.0154,"lng":121.5369},{"lat":25.0134,"lng":121.5391},{"lat":25.017,"lng":121.5378},{"lat":25.0196,"lng":121.5385},{"lat":25.019,"lng":121.543},{"lat":25.0186,"lng":121.5425},{"lat":25.018,"lng":121.5393},{"lat":25.0169,"lng":121.5403},{"lat":25.02,"lng":121.5435},{"lat":25.0179,"lng":121.5424},{"lat":25.0211,"lng":121.5359},{"lat":25.0182,"lng":121.5447},{"lat":25.0043,"lng":121.5019},{"lat":25.0865,"lng":121.8272},{"lat":25.0609,"lng":121.8232},{"lat":25.0391,"lng":121.8665},{"lat":25.0589,"lng":121.852},{"lat":25.0731,"lng":121.4842},{"lat":24.9551,"lng":121.3428},{"lat":25.0642,"lng":121.6573},{"lat":25.0674,"lng":121.6424},{"lat":24.9785,"lng":121.4183},{"lat":24.9771,"lng":121.5345},{"lat":24.9253,"lng":121.3655},{"lat":25.0041,"lng":121.5043},{"lat":25.0449,"lng":121.4527},{"lat":25.0059,"lng":121.5159},{"lat":25.0023,"lng":121.5088},{"lat":25.0771,"lng":121.382},{"lat":24.9304,"lng":121.3741},{"lat":24.9224,"lng":121.3672},{"lat":25.0862,"lng":121.4769},{"lat":25.0627,"lng":121.6629},{"lat":25.0819,"lng":121.4641},{"lat":25.0835,"lng":121.4732},{"lat":25.0634,"lng":121.4581},{"lat":24.9796,"lng":121.5461},{"lat":24.9449,"lng":121.341},{"lat":25.0746,"lng":121.3682},{"lat":24.9823,"lng":121.5035},{"lat":25.0755,"lng":121.6656},{"lat":24.9708,"lng":121.5169},{"lat":24.9775,"lng":121.5274},{"lat":25.002,"lng":121.4689},{"lat":24.9446,"lng":121.3704},{"lat":24.9893,"lng":121.4111},{"lat":24.9933,"lng":121.4265},{"lat":25.0163,"lng":121.4752},{"lat":25.0247,"lng":121.4506},{"lat":24.9436,"lng":121.3721},{"lat":24.9504,"lng":121.379},{"lat":24.9425,"lng":121.3655},{"lat":24.994,"lng":121.4892},{"lat":25.0107,"lng":121.4519},{"lat":25.0013,"lng":121.4839},{"lat":25.0293,"lng":121.4761},{"lat":24.984,"lng":121.4663},{"lat":24.9814,"lng":121.4481},{"lat":24.9828,"lng":121.4448},{"lat":25.0494,"lng":121.4742},{"lat":25.005,"lng":121.4506},{"lat":25.0791,"lng":121.4963},{"lat":25.0537,"lng":121.4762},{"lat":24.9767,"lng":121.5155},{"lat":24.9444,"lng":121.3701},{"lat":24.9445,"lng":121.3807},{"lat":25.0273,"lng":121.4818},{"lat":24.9755,"lng":121.6562},{"lat":25.0057,"lng":121.6516},{"lat":24.9472,"lng":121.3712},{"lat":24.9492,"lng":121.3751},{"lat":25.088,"lng":121.4821},{"lat":24.9567,"lng":121.3532},{"lat":24.9422,"lng":121.3388},{"lat":25.0195,"lng":121.471},{"lat":24.9395,"lng":121.3643},{"lat":24.9456,"lng":121.3725},{"lat":24.945,"lng":121.3715},{"lat":24.9449,"lng":121.3712},{"lat":24.9444,"lng":121.3733},{"lat":24.9432,"lng":121.3712},{"lat":24.944,"lng":121.3691},{"lat":24.9433,"lng":121.3674},{"lat":24.941,"lng":121.374},{"lat":25.0278,"lng":121.4554},{"lat":25.0902,"lng":121.4818},{"lat":24.971,"lng":121.5372},{"lat":24.9662,"lng":121.5164},{"lat":24.9604,"lng":121.5088},{"lat":25.0056,"lng":121.4535},{"lat":25.0066,"lng":121.4879},{"lat":24.9964,"lng":121.4285},{"lat":25.0781,"lng":121.6682},{"lat":25.0726,"lng":121.6656},{"lat":25.1677,"lng":121.4468},{"lat":25.017,"lng":121.4692},{"lat":25.0232,"lng":121.4784},{"lat":25.0238,"lng":121.4748},{"lat":25.082,"lng":121.3814},{"lat":25.0805,"lng":121.6719},{"lat":24.9883,"lng":121.4454},{"lat":25.0621,"lng":121.4577},{"lat":25.0239,"lng":121.4349},{"lat":25.0227,"lng":121.4253},{"lat":25.0589,"lng":121.4536},{"lat":25.0791,"lng":121.3869},{"lat":25.0805,"lng":121.398},{"lat":25.0814,"lng":121.3835},{"lat":25.0871,"lng":121.3796},{"lat":25.0684,"lng":121.6353},{"lat":25.059,"lng":121.4741},{"lat":25.0928,"lng":121.4447},{"lat":25.0722,"lng":121.4999},{"lat":25.1621,"lng":121.4251},{"lat":24.9547,"lng":121.5096},{"lat":24.9719,"lng":121.5193},{"lat":25.0665,"lng":121.4497},{"lat":24.9778,"lng":121.5428},{"lat":24.951,"lng":121.4942},{"lat":24.9653,"lng":121.5172},{"lat":24.9834,"lng":121.5183},{"lat":24.9531,"lng":121.4982},{"lat":24.9545,"lng":121.5037},{"lat":24.9535,"lng":121.4983},{"lat":25.183,"lng":121.4441},{"lat":25.1956,"lng":121.686},{"lat":25.1851,"lng":121.4423},{"lat":25.1608,"lng":121.4579},{"lat":25.1812,"lng":121.4357},{"lat":25.1846,"lng":121.4204},{"lat":25.0237,"lng":121.4554},{"lat":24.9346,"lng":121.3782},{"lat":25.056,"lng":121.474},{"lat":24.9737,"lng":121.5354},{"lat":24.947,"lng":121.4967},{"lat":24.9648,"lng":121.5156},{"lat":24.9448,"lng":121.4792},{"lat":24.9468,"lng":121.4899},{"lat":25.024,"lng":121.4527},{"lat":24.9351,"lng":121.3901},{"lat":24.9799,"lng":121.4505},{"lat":25.0012,"lng":121.4519},{"lat":25.0672,"lng":121.673},{"lat":25.1781,"lng":121.6891},{"lat":24.9768,"lng":121.4444},{"lat":25.0788,"lng":121.3892},{"lat":25.072,"lng":121.3902},{"lat":25.0098,"lng":121.4544},{"lat":25.0794,"lng":121.6625},{"lat":24.9908,"lng":121.4821},{"lat":25.0676,"lng":121.3586},{"lat":25.0669,"lng":121.3612},{"lat":25.0755,"lng":121.3791},{"lat":25.0751,"lng":121.3813},{"lat":25.0081,"lng":121.4922},{"lat":25.0153,"lng":121.4644},{"lat":24.9558,"lng":121.3413},{"lat":25.0159,"lng":121.4136},{"lat":25.0194,"lng":121.4815},{"lat":24.9818,"lng":121.5096},{"lat":24.9985,"lng":121.4865},{"lat":25.0533,"lng":121.4743},{"lat":25.1916,"lng":121.442},{"lat":25.0211,"lng":121.411},{"lat":25.1725,"lng":121.4407},{"lat":25.1867,"lng":121.4327},{"lat":25.0027,"lng":121.4925},{"lat":24.9412,"lng":121.3412},{"lat":25.034,"lng":121.4419},{"lat":25.0219,"lng":121.4264},{"lat":24.9992,"lng":121.4435},{"lat":25.0022,"lng":121.4853},{"lat":24.9631,"lng":121.4268},{"lat":24.9719,"lng":121.4591},{"lat":24.9762,"lng":121.4416},{"lat":25.0639,"lng":121.4638},{"lat":24.9836,"lng":121.4269},{"lat":24.9957,"lng":121.4784},{"lat":25.0667,"lng":121.4756},{"lat":25.0106,"lng":121.4724},{"lat":24.9489,"lng":121.4941},{"lat":24.9518,"lng":121.4904},{"lat":25.0312,"lng":121.4211},{"lat":24.9794,"lng":121.5063},{"lat":24.9292,"lng":121.3773},{"lat":24.984,"lng":121.4428},{"lat":24.9825,"lng":121.5079},{"lat":25.0135,"lng":121.5142},{"lat":25.0013,"lng":121.4699},{"lat":25.0427,"lng":121.4579},{"lat":25.1621,"lng":121.4531},{"lat":25.136,"lng":121.4635},{"lat":25.0886,"lng":121.4806},{"lat":25.0328,"lng":121.4355},{"lat":24.903,"lng":121.5522},{"lat":25.0119,"lng":121.4169},{"lat":25.0184,"lng":121.4707},{"lat":25.0069,"lng":121.4126},{"lat":24.9125,"lng":121.5374},{"lat":24.9199,"lng":121.5467},{"lat":25.0109,"lng":121.486},{"lat":25.0758,"lng":121.4826},{"lat":25.0117,"lng":121.4852},{"lat":25.0356,"lng":121.4725},{"lat":25.0142,"lng":121.4498},{"lat":24.9519,"lng":121.4863},{"lat":24.9491,"lng":121.3681},{"lat":24.9319,"lng":121.4075},{"lat":25.0771,"lng":121.4942},{"lat":25.0561,"lng":121.458},{"lat":25.074,"lng":121.4891},{"lat":25.0863,"lng":121.496},{"lat":25.1636,"lng":121.4125},{"lat":25.0104,"lng":121.5138},{"lat":24.9671,"lng":121.4369},{"lat":24.9674,"lng":121.4368},{"lat":24.9552,"lng":121.3473},{"lat":24.9536,"lng":121.3469},{"lat":25.0145,"lng":121.5106},{"lat":24.9836,"lng":121.5114},{"lat":25.0477,"lng":121.4656},{"lat":25.0479,"lng":121.4567},{"lat":25.259,"lng":121.5018},{"lat":25.2512,"lng":121.5012},{"lat":25.2572,"lng":121.4994},{"lat":25.0131,"lng":121.5154},{"lat":25.0122,"lng":121.5153},{"lat":25.066,"lng":121.3599},{"lat":25.0001,"lng":121.4917},{"lat":24.9924,"lng":121.5151},{"lat":25.0613,"lng":121.6354},{"lat":25.0639,"lng":121.5023},{"lat":24.9791,"lng":121.5435},{"lat":25.018,"lng":121.5155},{"lat":25.0022,"lng":121.515},{"lat":24.9915,"lng":121.5068},{"lat":24.9634,"lng":121.5418},{"lat":24.9656,"lng":121.5406},{"lat":25.1571,"lng":121.4103},{"lat":25.149,"lng":121.4026},{"lat":24.9749,"lng":121.5503},{"lat":25.0774,"lng":121.4687},{"lat":24.9805,"lng":121.5488},{"lat":24.9786,"lng":121.5503},{"lat":24.9804,"lng":121.5445},{"lat":24.9828,"lng":121.551},{"lat":25.0787,"lng":121.4864},{"lat":25.0829,"lng":121.4706},{"lat":25.021,"lng":121.4792},{"lat":25.0801,"lng":121.4995},{"lat":24.9715,"lng":121.3959},{"lat":25.0072,"lng":121.4177},{"lat":24.9756,"lng":121.4095},{"lat":24.9352,"lng":121.7053},{"lat":24.9799,"lng":121.4124},{"lat":24.9787,"lng":121.41},{"lat":24.9783,"lng":121.4115},{"lat":25.0108,"lng":121.4245},{"lat":24.9973,"lng":121.4653},{"lat":24.9355,"lng":121.7102},{"lat":24.9348,"lng":121.7125},{"lat":25.072,"lng":121.6627},{"lat":25.0531,"lng":121.4391},{"lat":25.0664,"lng":121.6308},{"lat":25.0679,"lng":121.668},{"lat":25.0654,"lng":121.6569},{"lat":25.0734,"lng":121.6625},{"lat":24.9983,"lng":121.4429},{"lat":25.0573,"lng":121.4918},{"lat":24.9864,"lng":121.4661},{"lat":24.9896,"lng":121.4159},{"lat":24.9995,"lng":121.4276},{"lat":24.9824,"lng":121.4213},{"lat":24.9872,"lng":121.4464},{"lat":25.2008,"lng":121.4318},{"lat":25.1955,"lng":121.4231},{"lat":25.0781,"lng":121.4842},{"lat":25.1698,"lng":121.4524},{"lat":25.1916,"lng":121.4348},{"lat":25.0848,"lng":121.4611},{"lat":24.9822,"lng":121.4276},{"lat":25.0766,"lng":121.4798},{"lat":25.0236,"lng":121.4497},{"lat":25.0647,"lng":121.492},{"lat":25.0778,"lng":121.4913},{"lat":25.077,"lng":121.4864},{"lat":25.0718,"lng":121.4949},{"lat":24.9518,"lng":121.3544},{"lat":24.9557,"lng":121.3599},{"lat":24.9501,"lng":121.3525},{"lat":25.0153,"lng":121.4662},{"lat":25.0218,"lng":121.4483},{"lat":25.0463,"lng":121.4394},{"lat":24.9395,"lng":121.3782},{"lat":25.1667,"lng":121.4467},{"lat":24.9347,"lng":121.3678},{"lat":24.9432,"lng":121.3723},{"lat":25.1621,"lng":121.4561},{"lat":25.1854,"lng":121.4319},{"lat":25.0311,"lng":121.4731},{"lat":25.0304,"lng":121.4716},{"lat":25.03,"lng":121.472},{"lat":25.0295,"lng":121.4731},{"lat":24.9788,"lng":121.451},{"lat":25.0164,"lng":121.4562},{"lat":25.0246,"lng":121.4134},{"lat":24.9788,"lng":121.5359},{"lat":25.077,"lng":121.4677},{"lat":25.0249,"lng":121.4168},{"lat":24.9884,"lng":121.4303},{"lat":24.9458,"lng":121.3743},{"lat":25.0911,"lng":121.4651},{"lat":24.988,"lng":121.4724},{"lat":24.9946,"lng":121.4572},{"lat":25.0296,"lng":121.4742},{"lat":25.0088,"lng":121.4463},{"lat":24.9846,"lng":121.4469},{"lat":25.1934,"lng":121.4348},{"lat":25.1854,"lng":121.4235},{"lat":25.1937,"lng":121.4206},{"lat":25.0933,"lng":121.4616},{"lat":24.9685,"lng":121.4513},{"lat":24.9927,"lng":121.4585},{"lat":24.9893,"lng":121.5133},{"lat":24.979,"lng":121.5284},{"lat":25.0213,"lng":121.4689},{"lat":25.0703,"lng":121.6429},{"lat":25.0792,"lng":121.4716},{"lat":25.0202,"lng":121.4664},{"lat":25.0758,"lng":121.6448},{"lat":25.0663,"lng":121.6617},{"lat":24.9622,"lng":121.4233},{"lat":24.9909,"lng":121.4937},{"lat":24.9088,"lng":121.3582},{"lat":24.9095,"lng":121.3573},{"lat":24.9871,"lng":121.4551},{"lat":24.9811,"lng":121.4515},{"lat":24.9731,"lng":121.4442},{"lat":24.9832,"lng":121.516},{"lat":25.0125,"lng":121.457},{"lat":25.0102,"lng":121.4655},{"lat":25.0107,"lng":121.4705},{"lat":25.0034,"lng":121.4643},{"lat":24.9409,"lng":121.3686},{"lat":24.943,"lng":121.3752},{"lat":24.9383,"lng":121.3774},{"lat":25.0535,"lng":121.4662},{"lat":25.1493,"lng":121.4013},{"lat":25.1642,"lng":121.4159},{"lat":24.9803,"lng":121.465},{"lat":24.9433,"lng":121.3763},{"lat":24.9416,"lng":121.3787},{"lat":24.9436,"lng":121.379},{"lat":24.9285,"lng":121.3677},{"lat":25.0858,"lng":121.4737},{"lat":24.968,"lng":121.3331},{"lat":25.0476,"lng":121.4514},{"lat":25.1964,"lng":121.4251},{"lat":25.0901,"lng":121.4611},{"lat":24.9478,"lng":121.3718},{"lat":24.9486,"lng":121.3736},{"lat":24.9463,"lng":121.3751},{"lat":25.1996,"lng":121.4304},{"lat":25.199,"lng":121.4253},{"lat":24.9798,"lng":121.4987},{"lat":24.9659,"lng":121.4394},{"lat":25.009,"lng":121.4997},{"lat":25.0173,"lng":121.5101},{"lat":24.9862,"lng":121.4717},{"lat":24.9688,"lng":121.4381},{"lat":24.9727,"lng":121.4415},{"lat":25.0721,"lng":121.3741},{"lat":25.0756,"lng":121.3964},{"lat":25.0886,"lng":121.3855},{"lat":25.0359,"lng":121.4766},{"lat":25.0024,"lng":121.5201},{"lat":24.9959,"lng":121.5233},{"lat":25.0124,"lng":121.4127},{"lat":24.9566,"lng":121.3569},{"lat":25.0565,"lng":121.4522},{"lat":24.9816,"lng":121.4562},{"lat":25.0356,"lng":121.4493},{"lat":25.0089,"lng":121.503},{"lat":24.9947,"lng":121.5094},{"lat":25.0572,"lng":121.4623},{"lat":24.9389,"lng":121.5333},{"lat":25.058,"lng":121.4289},{"lat":24.949,"lng":121.3423},{"lat":24.9553,"lng":121.36},{"lat":24.9431,"lng":121.5354},{"lat":24.9955,"lng":121.4654},{"lat":25.072,"lng":121.3631},{"lat":25.0734,"lng":121.3892},{"lat":25.0766,"lng":121.3798},{"lat":25.0705,"lng":121.3722},{"lat":25.0778,"lng":121.3689},{"lat":25.0697,"lng":121.3567},{"lat":24.9788,"lng":121.5334},{"lat":25.0072,"lng":121.5157},{"lat":25.0603,"lng":121.4547},{"lat":24.9738,"lng":121.3277},{"lat":25.0277,"lng":121.4147},{"lat":25.0455,"lng":121.4559},{"lat":25.0145,"lng":121.5158},{"lat":25.0517,"lng":121.4466},{"lat":25.0389,"lng":121.4476},{"lat":25.083,"lng":121.3783},{"lat":25.0272,"lng":121.418},{"lat":25.014,"lng":121.507},{"lat":25.0133,"lng":121.5127},{"lat":25.0191,"lng":121.4227},{"lat":25.0137,"lng":121.4249},{"lat":25.034,"lng":121.4472},{"lat":25.0031,"lng":121.4571},{"lat":24.998,"lng":121.5284},{"lat":25.0067,"lng":121.5227},{"lat":25.0091,"lng":121.5192},{"lat":25.0049,"lng":121.5117},{"lat":25.015,"lng":121.5087},{"lat":25.0142,"lng":121.5097},{"lat":25.0264,"lng":121.414},{"lat":25.0317,"lng":121.4472},{"lat":24.9734,"lng":121.549},{"lat":25.0591,"lng":121.4466},{"lat":24.9876,"lng":121.4446},{"lat":25.062,"lng":121.4592},{"lat":25.0366,"lng":121.4469},{"lat":24.9945,"lng":121.4971},{"lat":25.0563,"lng":121.4544},{"lat":25.0263,"lng":121.4553},{"lat":25.056,"lng":121.4477},{"lat":25.0566,"lng":121.4569},{"lat":25.049,"lng":121.4429},{"lat":25.0094,"lng":121.4638},{"lat":25.1957,"lng":121.4366},{"lat":25.1787,"lng":121.4442},{"lat":24.9453,"lng":121.3784},{"lat":24.9997,"lng":121.4325},{"lat":25.07,"lng":121.3639},{"lat":25.0667,"lng":121.3645},{"lat":25.0129,"lng":121.4236},{"lat":24.9922,"lng":121.4177},{"lat":25.1016,"lng":121.451},{"lat":25.0582,"lng":121.4609},{"lat":25.0593,"lng":121.4491},{"lat":25.2119,"lng":121.6471},{"lat":25.086,"lng":121.3809},{"lat":25.2204,"lng":121.6417},{"lat":24.9811,"lng":121.4168},{"lat":25.1778,"lng":121.4242},{"lat":25.0708,"lng":121.3595},{"lat":25.0739,"lng":121.3591},{"lat":25.0075,"lng":121.4858},{"lat":25.0149,"lng":121.4716},{"lat":25.0254,"lng":121.4772},{"lat":24.9838,"lng":121.415},{"lat":24.9836,"lng":121.4236},{"lat":24.9864,"lng":121.4149},{"lat":24.9839,"lng":121.4672},{"lat":24.9807,"lng":121.5076},{"lat":25.1687,"lng":121.4594},{"lat":24.9378,"lng":121.3608},{"lat":25.0228,"lng":121.413},{"lat":24.996,"lng":121.4295},{"lat":24.993,"lng":121.4282},{"lat":25.0232,"lng":121.4802},{"lat":25.0613,"lng":121.4815},{"lat":25.0802,"lng":121.4859},{"lat":25.0697,"lng":121.4941},{"lat":24.9074,"lng":121.3647},{"lat":25.0559,"lng":121.4444},{"lat":25.0557,"lng":121.4495},{"lat":24.9345,"lng":121.326},{"lat":25.0471,"lng":121.4445},{"lat":24.9971,"lng":121.5043},{"lat":25.0075,"lng":121.5134},{"lat":24.982,"lng":121.4655},{"lat":24.9961,"lng":121.5219},{"lat":24.9033,"lng":121.3551},{"lat":24.9624,"lng":121.4304},{"lat":24.9564,"lng":121.4144},{"lat":24.9532,"lng":121.4121},{"lat":24.9779,"lng":121.4599},{"lat":25.0898,"lng":121.488},{"lat":25.0799,"lng":121.3792},{"lat":25.0738,"lng":121.3803},{"lat":25.066,"lng":121.3625},{"lat":25.0321,"lng":121.4498},{"lat":25.0463,"lng":121.4577},{"lat":25.0574,"lng":121.4591},{"lat":25.0947,"lng":121.4468},{"lat":25.0723,"lng":121.3775},{"lat":24.9482,"lng":121.3798},{"lat":25.0164,"lng":121.407},{"lat":25.0716,"lng":121.3663},{"lat":25.0345,"lng":121.4446},{"lat":25.073,"lng":121.6384},{"lat":25.0755,"lng":121.3705},{"lat":25.0771,"lng":121.3938},{"lat":25.0515,"lng":121.4576},{"lat":25.0361,"lng":121.4528},{"lat":25.0394,"lng":121.4427},{"lat":25.0544,"lng":121.4592},{"lat":24.951,"lng":121.3865},{"lat":25.0542,"lng":121.4518},{"lat":25.0883,"lng":121.4345},{"lat":25.0865,"lng":121.4453},{"lat":25.0213,"lng":121.4222},{"lat":24.9989,"lng":121.4724},{"lat":24.9512,"lng":121.3426},{"lat":24.9586,"lng":121.3331},{"lat":24.9757,"lng":121.3294},{"lat":24.9793,"lng":121.4224},{"lat":24.9727,"lng":121.3932},{"lat":24.9459,"lng":121.3824},{"lat":24.9562,"lng":121.3897},{"lat":25.0792,"lng":121.3853},{"lat":25.01,"lng":121.5242},{"lat":25.0432,"lng":121.4441},{"lat":25.0091,"lng":121.4715},{"lat":25.0683,"lng":121.6199},{"lat":24.9448,"lng":121.378},{"lat":24.9421,"lng":121.3603},{"lat":24.9414,"lng":121.3705},{"lat":24.9384,"lng":121.3742},{"lat":24.9999,"lng":121.621},{"lat":25.0691,"lng":121.3678},{"lat":24.937,"lng":121.3686},{"lat":24.9428,"lng":121.3699},{"lat":25.0374,"lng":121.458},{"lat":25.0587,"lng":121.4581},{"lat":25.029,"lng":121.4228},{"lat":25.0203,"lng":121.4337},{"lat":25.0531,"lng":121.44},{"lat":25.0817,"lng":121.3727},{"lat":25.07,"lng":121.3769},{"lat":25.0741,"lng":121.3769},{"lat":25.0745,"lng":121.3743},{"lat":24.9264,"lng":121.3718},{"lat":24.941,"lng":121.3768},{"lat":24.9397,"lng":121.3669},{"lat":25.0171,"lng":121.4719},{"lat":25.0781,"lng":121.397},{"lat":25.0805,"lng":121.389},{"lat":25.0766,"lng":121.36},{"lat":25.0126,"lng":121.4343},{"lat":25.0624,"lng":121.431},{"lat":25.0552,"lng":121.432},{"lat":25.0641,"lng":121.426},{"lat":25.009,"lng":121.459},{"lat":25.01,"lng":121.461},{"lat":25.0904,"lng":121.442},{"lat":25.1083,"lng":121.456},{"lat":24.937,"lng":121.373},{"lat":24.9389,"lng":121.369},{"lat":25.0119,"lng":121.4327},{"lat":25.0171,"lng":121.428},{"lat":25.0767,"lng":121.3882},{"lat":25.0675,"lng":121.3713},{"lat":25.157,"lng":121.406},{"lat":25.1036,"lng":121.4482},{"lat":25.0681,"lng":121.4351},{"lat":25.0883,"lng":121.4323},{"lat":25.0779,"lng":121.4356},{"lat":24.9339,"lng":121.3693},{"lat":24.9278,"lng":121.3675},{"lat":24.9284,"lng":121.3759},{"lat":25.0694,"lng":121.4307},{"lat":25.0888,"lng":121.4463},{"lat":25.0743,"lng":121.4677},{"lat":24.9374,"lng":121.3769},{"lat":24.9459,"lng":121.3729},{"lat":24.9898,"lng":121.4248},{"lat":25.0995,"lng":121.4509},{"lat":24.9829,"lng":121.4562},{"lat":24.9778,"lng":121.4433},{"lat":24.9478,"lng":121.3768},{"lat":25.055,"lng":121.4611},{"lat":25.0518,"lng":121.4317},{"lat":25.0505,"lng":121.4277},{"lat":25.0332,"lng":121.4222},{"lat":25.0457,"lng":121.4263},{"lat":25.035,"lng":121.422},{"lat":25.0404,"lng":121.4226},{"lat":25.0436,"lng":121.4598},{"lat":24.9482,"lng":121.346},{"lat":24.9395,"lng":121.339},{"lat":25.0364,"lng":121.452},{"lat":25.0307,"lng":121.4432},{"lat":24.9855,"lng":121.4435},{"lat":24.9567,"lng":121.34},{"lat":24.954,"lng":121.346},{"lat":25.0434,"lng":121.4526},{"lat":25.0462,"lng":121.4423},{"lat":24.9851,"lng":121.4176},{"lat":24.9826,"lng":121.5264},{"lat":24.9902,"lng":121.4688},{"lat":24.9883,"lng":121.461},{"lat":24.9882,"lng":121.4565},{"lat":25.0652,"lng":121.4611},{"lat":25.0516,"lng":121.4621},{"lat":25.0526,"lng":121.4651},{"lat":25.1852,"lng":121.4444},{"lat":25.1839,"lng":121.4112},{"lat":25.1759,"lng":121.4285},{"lat":25.0615,"lng":121.451},{"lat":25.011,"lng":121.6385},{"lat":25.0015,"lng":121.6163},{"lat":25.0033,"lng":121.6025},{"lat":25.0714,"lng":121.476},{"lat":25.0697,"lng":121.4835},{"lat":25.0009,"lng":121.4315},{"lat":25.0034,"lng":121.4331},{"lat":24.9706,"lng":121.3925},{"lat":24.9917,"lng":121.4242},{"lat":24.9751,"lng":121.4005},{"lat":24.9714,"lng":121.5475},{"lat":24.9737,"lng":121.5476},{"lat":24.9633,"lng":121.4197},{"lat":24.9604,"lng":121.4121},{"lat":24.99,"lng":121.4472},{"lat":25.0061,"lng":121.4662},{"lat":25.017,"lng":121.4638},{"lat":25.1085,"lng":121.8065},{"lat":25.1028,"lng":121.8218},{"lat":25.2211,"lng":121.6418},{"lat":24.9628,"lng":121.3303},{"lat":24.9692,"lng":121.3347},{"lat":25.0643,"lng":121.4476},{"lat":25.0114,"lng":121.508},{"lat":24.9889,"lng":121.5148},{"lat":25.0779,"lng":121.4829},{"lat":25.0911,"lng":121.4904},{"lat":24.9758,"lng":121.3353},{"lat":25.068,"lng":121.3979},{"lat":25.0845,"lng":121.3898},{"lat":25.0803,"lng":121.3758},{"lat":24.955,"lng":121.3391},{"lat":24.9886,"lng":121.4218},{"lat":24.9743,"lng":121.4195},{"lat":24.9603,"lng":121.4032},{"lat":24.9486,"lng":121.384},{"lat":24.9327,"lng":121.3746},{"lat":24.9399,"lng":121.3839},{"lat":25.0857,"lng":121.484},{"lat":25.0001,"lng":121.463},{"lat":25.034,"lng":121.47},{"lat":25.0267,"lng":121.453},{"lat":25.0218,"lng":121.451},{"lat":25.033,"lng":121.466},{"lat":25.0663,"lng":121.4843},{"lat":24.9979,"lng":121.426},{"lat":24.9802,"lng":121.409},{"lat":24.9747,"lng":121.404},{"lat":25.0178,"lng":121.458},{"lat":25.0198,"lng":121.454},{"lat":25.0208,"lng":121.451},{"lat":24.9917,"lng":121.422},{"lat":24.9889,"lng":121.4176},{"lat":24.9829,"lng":121.4118},{"lat":24.9859,"lng":121.537},{"lat":24.975,"lng":121.543},{"lat":24.9828,"lng":121.541},{"lat":24.9775,"lng":121.551},{"lat":24.9789,"lng":121.53},{"lat":24.9804,"lng":121.4233},{"lat":24.9821,"lng":121.4122},{"lat":25.0215,"lng":121.4165},{"lat":24.9828,"lng":121.5263},{"lat":24.9751,"lng":121.531},{"lat":25.0658,"lng":121.6351},{"lat":25.0623,"lng":121.6345},{"lat":25.0031,"lng":121.4681},{"lat":24.9935,"lng":121.4908},{"lat":24.9991,"lng":121.4684},{"lat":25.0112,"lng":121.5177},{"lat":25.0559,"lng":121.4847},{"lat":25.0749,"lng":121.4949},{"lat":25.0549,"lng":121.4756},{"lat":25.0414,"lng":121.4461},{"lat":25.0259,"lng":121.4177},{"lat":25.0208,"lng":121.4296},{"lat":24.9834,"lng":121.4505},{"lat":24.9734,"lng":121.4405},{"lat":25.0254,"lng":121.4283},{"lat":25.0241,"lng":121.4239},{"lat":25.0524,"lng":121.4482},{"lat":25.0372,"lng":121.445},{"lat":25.0108,"lng":121.4278},{"lat":25.0521,"lng":121.4549},{"lat":25.0393,"lng":121.431},{"lat":25.0311,"lng":121.43},{"lat":24.9781,"lng":121.4394},{"lat":25.0277,"lng":121.4267},{"lat":25.0457,"lng":121.4421},{"lat":25.0302,"lng":121.4134},{"lat":24.9816,"lng":121.4547},{"lat":24.9748,"lng":121.4587},{"lat":24.977,"lng":121.4458},{"lat":25.033,"lng":121.4367},{"lat":25.0395,"lng":121.4608},{"lat":25.2523,"lng":121.4713},{"lat":25.0456,"lng":121.4478},{"lat":25.0843,"lng":121.3743},{"lat":25.0777,"lng":121.3735},{"lat":25.0758,"lng":121.3761},{"lat":25.0764,"lng":121.3676},{"lat":25.073,"lng":121.3693},{"lat":24.9389,"lng":121.3636},{"lat":24.9312,"lng":121.3726},{"lat":24.9303,"lng":121.3791},{"lat":25.0732,"lng":121.3628},{"lat":25.0543,"lng":121.4439},{"lat":25.0408,"lng":121.4526},{"lat":25.0478,"lng":121.4533},{"lat":25.0589,"lng":121.4517},{"lat":25.0414,"lng":121.4461},{"lat":25.0462,"lng":121.4537},{"lat":25.0263,"lng":121.4424},{"lat":25.0479,"lng":121.4616},{"lat":24.9864,"lng":121.4491},{"lat":24.9837,"lng":121.4579},{"lat":24.9869,"lng":121.466},{"lat":25.062,"lng":121.435},{"lat":25.0558,"lng":121.4343},{"lat":25.1048,"lng":121.4528},{"lat":25.0954,"lng":121.4483},{"lat":24.9844,"lng":121.4485},{"lat":24.9789,"lng":121.4428},{"lat":24.9728,"lng":121.444},{"lat":24.9691,"lng":121.4402},{"lat":24.9661,"lng":121.4355},{"lat":24.9974,"lng":121.4218},{"lat":24.9983,"lng":121.4246},{"lat":25.0042,"lng":121.4228},{"lat":25.0091,"lng":121.4249},{"lat":25.2043,"lng":121.6904},{"lat":25.2855,"lng":121.5221},{"lat":25.072,"lng":121.4356},{"lat":25.0825,"lng":121.4395},{"lat":25.0499,"lng":121.4602},{"lat":25.0164,"lng":121.4043},{"lat":25.0171,"lng":121.4183},{"lat":25.0073,"lng":121.415},{"lat":25.0056,"lng":121.4131},{"lat":25.0009,"lng":121.4161},{"lat":25.1304,"lng":121.4513},{"lat":24.9514,"lng":121.3573},{"lat":24.9438,"lng":121.3421},{"lat":24.9392,"lng":121.3349},{"lat":25.1468,"lng":121.3999},{"lat":25.154,"lng":121.4072},{"lat":25.1599,"lng":121.4141},{"lat":25.1606,"lng":121.4194},{"lat":25.1568,"lng":121.436},{"lat":24.9556,"lng":121.3544},{"lat":24.9572,"lng":121.3495},{"lat":24.9495,"lng":121.3529},{"lat":24.9582,"lng":121.415},{"lat":25.0837,"lng":121.4407},{"lat":24.9822,"lng":121.4528},{"lat":24.9838,"lng":121.4635},{"lat":24.9807,"lng":121.4604},{"lat":24.9751,"lng":121.4587},{"lat":24.9752,"lng":121.4388},{"lat":24.9837,"lng":121.4542},{"lat":24.9726,"lng":121.4348},{"lat":24.9767,"lng":121.4477},{"lat":24.9828,"lng":121.4438},{"lat":24.9585,"lng":121.4178},{"lat":24.9658,"lng":121.4326},{"lat":24.988,"lng":121.4515},{"lat":25.0331,"lng":121.4685},{"lat":25.0142,"lng":121.5155},{"lat":25.0155,"lng":121.4637},{"lat":25.0935,"lng":121.4745},{"lat":25.0851,"lng":121.4819},{"lat":24.9747,"lng":121.5384},{"lat":25.0695,"lng":121.6315},{"lat":25.0782,"lng":121.6676},{"lat":25.0642,"lng":121.6583},{"lat":25.0652,"lng":121.6641},{"lat":25.0005,"lng":121.5111},{"lat":25.0662,"lng":121.6591},{"lat":24.9956,"lng":121.5266},{"lat":25.0057,"lng":121.5057},{"lat":25.0648,"lng":121.4794},{"lat":25.0661,"lng":121.4955},{"lat":25.0748,"lng":121.4985},{"lat":25.0777,"lng":121.4803},{"lat":25.0864,"lng":121.4856},{"lat":25.2013,"lng":121.435},{"lat":25.0007,"lng":121.5143},{"lat":25.0573,"lng":121.4991},{"lat":25.066,"lng":121.4777},{"lat":25.0822,"lng":121.476},{"lat":25.0823,"lng":121.4822},{"lat":25.0856,"lng":121.4777},{"lat":25.094,"lng":121.4713},{"lat":25.056,"lng":121.4713},{"lat":25.1865,"lng":121.4433},{"lat":25.0795,"lng":121.6743},{"lat":25.0461,"lng":121.471},{"lat":25.0531,"lng":121.4702},{"lat":25.1999,"lng":121.4289},{"lat":24.9586,"lng":121.5387},{"lat":25.0761,"lng":121.4843},{"lat":25.0759,"lng":121.4878},{"lat":25.0782,"lng":121.4902},{"lat":25.2197,"lng":121.6292},{"lat":25.2179,"lng":121.6414},{"lat":25.2197,"lng":121.6363},{"lat":25.2236,"lng":121.6347},{"lat":25.239,"lng":121.6323},{"lat":24.9904,"lng":121.525},{"lat":25.0047,"lng":121.4718},{"lat":25.033,"lng":121.4668},{"lat":25.0131,"lng":121.4565},{"lat":25.0678,"lng":121.6596},{"lat":25.0679,"lng":121.6617},{"lat":25.0694,"lng":121.6698},{"lat":25.0803,"lng":121.6685},{"lat":25.015,"lng":121.5209},{"lat":25.0816,"lng":121.4616},{"lat":24.9566,"lng":121.5348},{"lat":24.9531,"lng":121.5518},{"lat":25.015,"lng":121.4817},{"lat":25.089,"lng":121.6459},{"lat":25.0681,"lng":121.627},{"lat":25.0782,"lng":121.6245},{"lat":25.0842,"lng":121.4855},{"lat":25.0872,"lng":121.4895},{"lat":24.9869,"lng":121.5419},{"lat":24.9868,"lng":121.5218},{"lat":25.1071,"lng":121.8104},{"lat":25.0731,"lng":121.6626},{"lat":25.0806,"lng":121.4962},{"lat":25.0817,"lng":121.4939},{"lat":24.9826,"lng":121.5336},{"lat":24.9704,"lng":121.5434},{"lat":24.9699,"lng":121.5462},{"lat":24.9676,"lng":121.5421},{"lat":24.9632,"lng":121.5401},{"lat":24.9674,"lng":121.541},{"lat":24.9821,"lng":121.5409},{"lat":24.9741,"lng":121.5189},{"lat":24.9776,"lng":121.5475},{"lat":24.9612,"lng":121.51},{"lat":24.9509,"lng":121.5474},{"lat":24.9626,"lng":121.5127},{"lat":24.9545,"lng":121.5595},{"lat":24.9829,"lng":121.5438},{"lat":24.9743,"lng":121.5428},{"lat":24.9753,"lng":121.5273},{"lat":24.9832,"lng":121.5375},{"lat":24.9753,"lng":121.5157},{"lat":25.1746,"lng":121.4524},{"lat":24.9912,"lng":121.534},{"lat":25.1748,"lng":121.4316},{"lat":25.1785,"lng":121.4479},{"lat":25.0222,"lng":121.4582},{"lat":25.0075,"lng":121.448},{"lat":25.0109,"lng":121.456},{"lat":25.0191,"lng":121.4737},{"lat":25.0303,"lng":121.4695},{"lat":25.0186,"lng":121.4675},{"lat":25.0239,"lng":121.484},{"lat":25.0161,"lng":121.4735},{"lat":24.9937,"lng":121.4625},{"lat":25.0256,"lng":121.4714},{"lat":25.0234,"lng":121.4711},{"lat":24.9965,"lng":121.4428},{"lat":25.071,"lng":121.635},{"lat":25.0689,"lng":121.6375},{"lat":25.0689,"lng":121.6628},{"lat":25.0737,"lng":121.6663},{"lat":25.0705,"lng":121.667},{"lat":25.0729,"lng":121.6586},{"lat":25.0721,"lng":121.6521},{"lat":25.0007,"lng":121.5267},{"lat":25.0569,"lng":121.6552},{"lat":25.063,"lng":121.6544},{"lat":25.0598,"lng":121.6526},{"lat":25.0082,"lng":121.459},{"lat":25.0286,"lng":121.4685},{"lat":25.0139,"lng":121.459},{"lat":25.0098,"lng":121.4881},{"lat":25.004,"lng":121.4944},{"lat":25.0069,"lng":121.5032},{"lat":25.0694,"lng":121.6284},{"lat":25.066,"lng":121.4805},{"lat":25.092,"lng":121.4616},{"lat":25.0084,"lng":121.5202},{"lat":25.0052,"lng":121.5133},{"lat":24.9978,"lng":121.5197},{"lat":25.0476,"lng":121.6189},{"lat":25.0687,"lng":121.4807},{"lat":25.0158,"lng":121.5113},{"lat":25.007,"lng":121.5092},{"lat":25.0178,"lng":121.512},{"lat":25.0168,"lng":121.5153},{"lat":25.0064,"lng":121.4742},{"lat":24.9955,"lng":121.4675},{"lat":24.9986,"lng":121.5005},{"lat":24.9835,"lng":121.5048},{"lat":24.9953,"lng":121.5135},{"lat":24.989,"lng":121.493},{"lat":25.0065,"lng":121.5001},{"lat":24.9605,"lng":121.4172},{"lat":24.9998,"lng":121.4781},{"lat":24.9854,"lng":121.507},{"lat":25.0022,"lng":121.4959},{"lat":25.0059,"lng":121.4996},{"lat":25.0077,"lng":121.4932},{"lat":24.9904,"lng":121.5024},{"lat":25.0103,"lng":121.4787},{"lat":25.0057,"lng":121.479},{"lat":25.0501,"lng":121.4689},{"lat":25.0812,"lng":121.4846},{"lat":25.086,"lng":121.4938},{"lat":25.0515,"lng":121.4882},{"lat":25.0536,"lng":121.4929},{"lat":25.0681,"lng":121.471},{"lat":25.0685,"lng":121.4978},{"lat":25.0636,"lng":121.4945},{"lat":25.0704,"lng":121.4971},{"lat":25.0837,"lng":121.4875},{"lat":25.0512,"lng":121.476},{"lat":25.0648,"lng":121.4988},{"lat":25.0661,"lng":121.5036},{"lat":24.966,"lng":121.5431},{"lat":24.977,"lng":121.5379},{"lat":25.13,"lng":121.8186},{"lat":25.0215,"lng":121.4592},{"lat":25.0241,"lng":121.4579},{"lat":25.0279,"lng":121.4578},{"lat":25.0178,"lng":121.5168},{"lat":25.0045,"lng":121.5279},{"lat":24.982,"lng":121.5275},{"lat":24.985,"lng":121.5177},{"lat":24.9794,"lng":121.5156},{"lat":24.9693,"lng":121.5152},{"lat":24.9668,"lng":121.5165},{"lat":24.9531,"lng":121.5375},{"lat":24.9642,"lng":121.5145},{"lat":24.9595,"lng":121.5129},{"lat":24.9552,"lng":121.5394},{"lat":25.0085,"lng":121.5247},{"lat":25.0108,"lng":121.447},{"lat":25.0264,"lng":121.4797},{"lat":25.0158,"lng":121.4678},{"lat":25.0245,"lng":121.4632},{"lat":25.0257,"lng":121.4639},{"lat":24.9934,"lng":121.4296},{"lat":24.9963,"lng":121.4454},{"lat":25.0211,"lng":121.4768},{"lat":25.0746,"lng":121.4782},{"lat":24.9916,"lng":121.4629},{"lat":25.0179,"lng":121.4794},{"lat":24.9986,"lng":121.4414},{"lat":25.0634,"lng":121.489},{"lat":24.98,"lng":121.5087},{"lat":25.0026,"lng":121.4508},{"lat":25.0348,"lng":121.4725},{"lat":25.0259,"lng":121.4544},{"lat":25.0943,"lng":121.4601},{"lat":25.0906,"lng":121.4716},{"lat":25.09,"lng":121.4594},{"lat":25.0884,"lng":121.4699},{"lat":25.088,"lng":121.4739},{"lat":25.0858,"lng":121.4727},{"lat":25.0286,"lng":121.4804},{"lat":24.9795,"lng":121.5523},{"lat":24.991,"lng":121.5192},{"lat":25.0077,"lng":121.4849},{"lat":25.0123,"lng":121.506},{"lat":25.0643,"lng":121.6529},{"lat":25.061,"lng":121.6556},{"lat":25.0752,"lng":121.5012},{"lat":25.0262,"lng":121.4725},{"lat":25.025,"lng":121.4544},{"lat":25.0916,"lng":121.464},{"lat":25.0293,"lng":121.472},{"lat":25.0313,"lng":121.4635},{"lat":25.088,"lng":121.4622},{"lat":25.0887,"lng":121.4646},{"lat":25.018,"lng":121.4503},{"lat":25.0181,"lng":121.4507},{"lat":25.0214,"lng":121.4522},{"lat":25.0293,"lng":121.4724},{"lat":25.1808,"lng":121.4524},{"lat":25.0829,"lng":121.4567},{"lat":25.0145,"lng":121.4618},{"lat":25.1765,"lng":121.4561},{"lat":25.0211,"lng":121.45},{"lat":25.0032,"lng":121.5241},{"lat":25.005,"lng":121.5227},{"lat":25.0059,"lng":121.5209},{"lat":24.999,"lng":121.5228},{"lat":25.0849,"lng":121.4582},{"lat":25.0805,"lng":121.4798},{"lat":25.08,"lng":121.4762},{"lat":25.0818,"lng":121.4682},{"lat":25.0023,"lng":121.5174},{"lat":25.0133,"lng":121.462},{"lat":25.0362,"lng":121.4795},{"lat":25.0324,"lng":121.4743},{"lat":25.0349,"lng":121.4793},{"lat":25.1835,"lng":121.4484},{"lat":25.1688,"lng":121.4442},{"lat":25.182,"lng":121.4188},{"lat":25.0735,"lng":121.501},{"lat":25.0613,"lng":121.6495},{"lat":25.1372,"lng":121.4602},{"lat":25.1536,"lng":121.4591},{"lat":25.165,"lng":121.4507},{"lat":25.1804,"lng":121.4447},{"lat":25.0627,"lng":121.6468},{"lat":25.0651,"lng":121.633},{"lat":25.0011,"lng":121.5019},{"lat":25.0242,"lng":121.4778},{"lat":25.0091,"lng":121.468},{"lat":25.0234,"lng":121.4686},{"lat":25.188,"lng":121.4311},{"lat":25.0776,"lng":121.4661},{"lat":25.085,"lng":121.4665},{"lat":25.0786,"lng":121.4622},{"lat":25.0833,"lng":121.4639},{"lat":25.1382,"lng":121.4634},{"lat":25.182,"lng":121.4221},{"lat":25.1874,"lng":121.417},{"lat":25.1725,"lng":121.4388},{"lat":25.1892,"lng":121.4444},{"lat":25.1925,"lng":121.4419},{"lat":25.0098,"lng":121.5091},{"lat":25.0095,"lng":121.5054},{"lat":25.0224,"lng":121.4678},{"lat":25.1952,"lng":121.4279},{"lat":25.1962,"lng":121.4329},{"lat":25.1978,"lng":121.4388},{"lat":25.1862,"lng":121.4374},{"lat":25.1912,"lng":121.4275},{"lat":24.9997,"lng":121.506},{"lat":25.0018,"lng":121.4827},{"lat":24.9966,"lng":121.4931},{"lat":24.9896,"lng":121.4912},{"lat":25.1893,"lng":121.4394},{"lat":25.1904,"lng":121.4311},{"lat":24.992,"lng":121.5156},{"lat":25.0079,"lng":121.501},{"lat":25.0114,"lng":121.5028},{"lat":24.994,"lng":121.4329},{"lat":25.0041,"lng":121.4442},{"lat":25.0061,"lng":121.4456},{"lat":25.0116,"lng":121.4673},{"lat":24.99,"lng":121.4322},{"lat":25.0015,"lng":121.4557},{"lat":24.9935,"lng":121.4876},{"lat":25.0174,"lng":121.4826},{"lat":25.0256,"lng":121.4746},{"lat":24.9968,"lng":121.4965},{"lat":24.9918,"lng":121.4571},{"lat":24.9995,"lng":121.4465},{"lat":25.013,"lng":121.486},{"lat":25.0205,"lng":121.4859},{"lat":25.0084,"lng":121.4633},{"lat":25.0318,"lng":121.4612},{"lat":25.0015,"lng":121.4592},{"lat":25.0206,"lng":121.4702},{"lat":24.9977,"lng":121.4643},{"lat":25.0137,"lng":121.4754},{"lat":24.996,"lng":121.4597},{"lat":25.026,"lng":121.4666},{"lat":25.0233,"lng":121.4742},{"lat":25.0719,"lng":121.4815},{"lat":25.0725,"lng":121.4858},{"lat":25.0709,"lng":121.4857},{"lat":25.0695,"lng":121.4876},{"lat":25.0705,"lng":121.4909},{"lat":25.072,"lng":121.4912},{"lat":25.0653,"lng":121.4904},{"lat":25.0049,"lng":121.4613},{"lat":25.0038,"lng":121.4553},{"lat":24.9985,"lng":121.4486},{"lat":24.9962,"lng":121.4562},{"lat":25.0645,"lng":121.4837},{"lat":25.059,"lng":121.4826},{"lat":25.0606,"lng":121.4882},{"lat":25.0605,"lng":121.4922},{"lat":25.0615,"lng":121.4919},{"lat":25.0703,"lng":121.4798},{"lat":24.9742,"lng":121.5342},{"lat":24.9714,"lng":121.5365},{"lat":24.9716,"lng":121.539},{"lat":25.0603,"lng":121.5022},{"lat":25.056,"lng":121.4969},{"lat":24.987,"lng":121.4269},{"lat":24.9919,"lng":121.4528},{"lat":25.0079,"lng":121.4523},{"lat":24.9792,"lng":121.5248},{"lat":24.9715,"lng":121.5303},{"lat":24.9845,"lng":121.5279},{"lat":25.0603,"lng":121.4998},{"lat":25.0601,"lng":121.4831},{"lat":25.0235,"lng":121.4681},{"lat":25.0235,"lng":121.4674},{"lat":25.0141,"lng":121.4712},{"lat":25.0193,"lng":121.4653},{"lat":25.0544,"lng":121.4885},{"lat":25.0546,"lng":121.4832},{"lat":25.0505,"lng":121.4914},{"lat":25.0486,"lng":121.4864},{"lat":24.9762,"lng":121.5469},{"lat":24.9742,"lng":121.5444},{"lat":25.0584,"lng":121.4898},{"lat":25.0548,"lng":121.4917},{"lat":25.0669,"lng":121.6404},{"lat":25.0579,"lng":121.635},{"lat":25.0581,"lng":121.626},{"lat":24.9937,"lng":121.4941},{"lat":24.9935,"lng":121.5047},{"lat":25.0388,"lng":121.6243},{"lat":25.0632,"lng":121.6411},{"lat":25.008,"lng":121.4668},{"lat":25.0123,"lng":121.4713},{"lat":24.9865,"lng":121.5175},{"lat":25.0024,"lng":121.505},{"lat":25.0047,"lng":121.5078},{"lat":24.9894,"lng":121.51},{"lat":24.993,"lng":121.4994},{"lat":24.9923,"lng":121.5042},{"lat":24.9942,"lng":121.4786},{"lat":25.0035,"lng":121.4753},{"lat":25.0086,"lng":121.4747},{"lat":25.0057,"lng":121.4891},{"lat":24.9906,"lng":121.4264},{"lat":24.9983,"lng":121.4527},{"lat":24.9986,"lng":121.4576},{"lat":25.0167,"lng":121.4506},{"lat":25.0125,"lng":121.4642},{"lat":25.0125,"lng":121.4665}]</script>
 <script>// global variable declaration
 var leaflet={};</script>
 <script>
 function prepareBaseMap(currentLocation) {
   if(!leaflet.map){
     // create map without declaration makes map a global object
+    // equivalent to R's leaflet.map = leaflet() |> setView(...)
     leaflet.map = L.map('map').setView(currentLocation, 13);
     // Add different layers to map via sequence of
       // L.{specific layer}.addTo(map)
 
       // Add map tiles
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
-      }).addTo(leaflet.map);
+      // equivalent to R's leaflet.map |> addTiles(...)
+      // L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      //   maxZoom: 19
+      // }).addTo(leaflet.map);
+
+      // Use CartoDB.positron
+      var CartoDB_Positron = L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', 
+        {"errorTileUrl":"","noWrap":false,"detectRetina":false}) 
+      CartoDB_Positron.addTo(leaflet.map);
+
+//       // Use Esri.NatGeoWorldMap
+//       var Esri_NatGeoWorldMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}', {
+//  attribution: 'Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC',
+//  maxZoom: 16
+// });
+//       Esri_NatGeoWorldMap.addTo(leaflet.map);
+      
+     
   } else {
     leaflet.map.setView(currentLocation, 13);
   }
@@ -6037,8 +6915,8 @@ function errorCallback(error) {
 <div class="knitr-options" data-fig-width="576" data-fig-height="460">
 
 </div>
-<div class="leaflet html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-5afd61a41b184cefbc29" style="width:576px;height:460.8px;"></div>
-<script type="application/json" data-for="htmlwidget-5afd61a41b184cefbc29">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addTiles","args":["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",null,null,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap<\/a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA<\/a>"}]},{"method":"addMarkers","args":[25.05,121.5,null,null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Taipei",null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]}],"limits":{"lat":[25.05,25.05],"lng":[121.5,121.5]}},"evals":[],"jsHooks":[]}</script>
+<div class="leaflet html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-620b1da76d6117748f52" style="width:576px;height:460.8px;"></div>
+<script type="application/json" data-for="htmlwidget-620b1da76d6117748f52">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addProviderTiles","args":["CartoDB.Positron",null,null,{"errorTileUrl":"","noWrap":false,"detectRetina":false}]},{"method":"addMarkers","args":[25.05,121.5,null,null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},"Taipei",null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]}],"limits":{"lat":[25.05,25.05],"lng":[121.5,121.5]}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <div id="column-1" class="section level2" data-width="350">

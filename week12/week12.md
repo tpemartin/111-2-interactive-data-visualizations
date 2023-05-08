@@ -110,6 +110,16 @@ navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
 
 ## data merge
 
+To pass merged data to the flexdashboard, add the following code:
+```r
+ubikeMap = readRDS("ubikeMap.Rds")
+htmltools::tags$script(
+  id="youbike-data",
+  type="application/json",
+  ubikeMap$dataMerged[,c("lat","lng")] |> jsonlite::toJSON(auto_unbox = T)
+)
+```
+
 # Github Desktop
 
   * copy the url of the repo
@@ -118,3 +128,21 @@ navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
   * Choose tab `URL`, paste the url, and choose the local path
   * click `Clone`
   
+
+# JS knowledge
+
+```js
+if(leaflet.map){
+  ...
+}
+```
+
+  * `leaflet.map` is `true` if `leaflet.map` is not `undefined` or `null` or `false` or `0` or `NaN` or `""` (empty string)
+
+```js
+if(!leaflet.map){
+  ...
+}
+```
+
+  * `!leaflet.map` is `true` if `leaflet.map` is `undefined` or `null` or `false` or `0` or `NaN` or `""` (empty string)

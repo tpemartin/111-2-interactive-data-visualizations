@@ -9,9 +9,17 @@ output:
 ```{r setup, include=FALSE}
 library(flexdashboard)
 library(leaflet)
+
 ```
 
 ```{r}
+ubikeMap = readRDS("ubikeMap.Rds")
+htmltools::tags$script(
+  id="youbike-data",
+  type="application/json",
+  ubikeMap$dataMerged[,c("lat","lng")] |> jsonlite::toJSON(auto_unbox = T)
+)
+
 htmltools::includeScript("./js/init.js")
 htmltools::includeScript("./js/helper.js")
 htmltools::includeScript("./js/DOMready.js")
@@ -24,7 +32,8 @@ Column {data-width=350}
 ### Chart A
 
 ```{r}
-leaflet() %>% addTiles() %>% addMarkers(lng=121.5, lat=25.05, popup="Taipei")
+leaflet() %>% addProviderTiles(providers$CartoDB.Positron) %>% addMarkers(lng=121.5, lat=25.05, popup="Taipei") -> m
+m
 ```
 
 Column {data-width=350}
