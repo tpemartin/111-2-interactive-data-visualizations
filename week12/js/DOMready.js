@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     navigator.geolocation
         .getCurrentPosition(successCallback, errorCallback)
         
-
+    //youbike data
+    var youbikeDOM = document.getElementById("youbike-data")
+    leaflet.data = JSON.parse(youbikeDOM.textContent)
 
 })
