@@ -32,7 +32,23 @@ Column {data-width=350}
 ### Chart A
 
 ```{r}
-leaflet() %>% addProviderTiles(providers$CartoDB.Positron) %>% addMarkers(lng=121.5, lat=25.05, popup="Taipei") -> m
+leaflet(ubikeMap$dataMerged) |>
+        setView(121.5288805, 25.0418781, zoom = 14) |>
+        addProviderTiles(
+            providers$CartoDB.Positron
+        ) |>
+        addCircleMarkers(
+            lng = ~lng, lat = ~lat,
+            radius = 4,
+            # color = ~pal(type),
+            stroke = FALSE, fillOpacity = 0.7
+        ) |>
+        addEasyButton(easyButton(
+            icon = "fa-crosshairs", title = "Locate Me",
+            onClick = JS("function(btn, map){
+                   myMap = map;
+                   map.locate({setView: true}); }")
+        )) -> m
 m
 ```
 

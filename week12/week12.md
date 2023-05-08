@@ -78,6 +78,9 @@ let currentMarker = L.marker([25.05, 121.5]).addTo(map);
 marker.bindPopup("Taipei");
 ```
 
+### Add circle markers
+
+   * https://leafletjs.com/reference.html#circlemarker
 
 
 
