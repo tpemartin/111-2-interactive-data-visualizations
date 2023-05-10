@@ -98,6 +98,7 @@ bigMacData$splideByCountries <- bigMacData$splideByCountries
 
 bigMacData$splideByCountries$Argentina |>
   plotArea() -> bb
+bb
 
 bigMacData$splideByCountries |>
   purrr::map(
@@ -109,6 +110,24 @@ bigMacData$splideByCountries |>
 }
 ## static svg ------
 {
+  bb |>
+    plotly::api_create(filename="svgTemplate", fileopt="overwrite")
+
+  plotly::api_download_plot(id="350", username="tpemartin") -> template
+
+  template |>
+    plotly::config(
+      displayModebar=F,
+      staticPlot=TRUE
+    ) -> template
+
+  template$x[c("layout","config")] -> chartA$plotlyTemplate
+
+
+  bb$x$layout <- template$x$layout
+  bb$x$config <- template$x$config
+  bb
+
   # pp |>
   # plotly::api_create(fileopt = "overwrite")
 
