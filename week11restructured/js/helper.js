@@ -1,11 +1,21 @@
+function handleChartCHoverCancel(){
+
+  // resume original styleChange
+  Plotly.restyle(
+    app.chartC.DOM.plotly,
+    app.chartC.styleChange.original
+)
+
+}
+
 function graphChartA(){
-    let $tr =  app.chartA.DOM.trs 
+    let $tr =  app.chartA.DOM.trs
     for(let i=0; i<$tr.length; i++){
         let targetTds= $tr[i].querySelectorAll("td")
 
         let countryName = targetTds[1].innerText
         let targetGraphDOM = targetTds[2]
-        
+
         Plotly.react(
             targetGraphDOM,
             app.chartA.templateData.data[countryName],

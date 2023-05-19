@@ -27,12 +27,12 @@ document.addEventListener('DOMContentLoaded', function () {
     app.chartA.templateData = JSON.parse(chartATemplate.textContent)
     // chart A's graph DOM object
     let chartA = document.getElementById("widget-chartA")
-    
+
     app.chartA.DOM = {}
     app.chartA.DOM.trs = chartA.querySelectorAll("tbody tr")
     //interactions
     // chart A graph
-    
+
     // chart B's dropdown on change, then do chartBredraw
     app.chartB.DOM.dropdownMenu.onchange = handleDropdownMenuChange
 
@@ -42,3 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // chart C click highlight
     app.chartC.DOM.plotly.on("plotly_click",handleChartCPlotlyClick)
   }, false);
+    app.chartC.DOM.plotly.onmouseleave = handleChartCHoverCancel
+
+
