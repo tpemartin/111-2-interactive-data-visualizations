@@ -59,6 +59,6 @@ Column {data-width=350}
 ### Chart B
 
 ```{r}
-htmltools::div(id="map", style="height:100%")
+htmltools::div(id="map2", style="height:100%")
 ```
 

@@ -86,6 +86,25 @@ marker.bindPopup("Taipei");
 
    * Use `<a>` tag: https://www.w3schools.com/tags/tag_a.asp
 
+### Marker with Popup 
+
+```js
+// R
+// m = leaflet() |> setView(25.05, 121.5, 13)
+m = L.map("map2").setView([25.05,121.5],13)
+// m |> addTiles() -> m
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{},{},{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap<\/a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA<\/a>"}
+).addTo(m)
+
+// m |> addMarkers(25.05, 121.5, popup="Taipei", 
+//   popupOptions = list(interactive = TRUE, draggable = FALSE, keyboard = TRUE, title = "", alt = "", zIndexOffset = 0L, opacity = 1L, riseOnHover = FALSE, riseOffset = 250L)) -> m
+L.tooltip(
+  {"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250}, m
+)
+currentMarker = L.marker([25.05,121.5],{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250}).addTo(m)
+currentMarker.bindPopup("Taipei")
+```
 
 # User GPS
 
@@ -152,3 +171,4 @@ if(!leaflet.map){
 ```
 
   * `!leaflet.map` is `true` if `leaflet.map` is `undefined` or `null` or `false` or `0` or `NaN` or `""` (empty string)
+
