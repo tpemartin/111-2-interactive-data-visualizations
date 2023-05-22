@@ -31,6 +31,8 @@ m = L.map("map").setView([25.05,121.5],13)
 
   * ignore empty `[]`.
 
+#### [JS destruction](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment)
+
 ### Add tiles
 
 ```js
