@@ -33,6 +33,13 @@ m = L.map("map").setView([25.05,121.5],13)
 
 #### [JS destruction](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment)
 
+Similar to Python unpacking. 
+
+```js
+//[]
+
+```
+
 ### Add tiles
 
 ```js
@@ -46,7 +53,7 @@ t.addTo(m)
 
   * ignore empty `{}`.
 
-### Add Markers
+### Add [Markers](https://leafletjs.com/reference.html#marker)
 
 ```js
 // markers

@@ -17,7 +17,8 @@ m
 ```
 
 ```{r}
-m$x$setView |> jsonlite::toJSON(auto_unbox = T)
+m$x$setView |> jsonlite::toJSON(auto_unbox = T) |>
+  clipr::write_clip()
 ```
 
 
@@ -31,7 +32,8 @@ m
 ```{r}
 m$x$calls[[1]]$method # "addTiles"
 m$x$calls[[1]]$args |>
-  jsonlite::toJSON(auto_unbox = T)
+  jsonlite::toJSON(auto_unbox = T) |>
+  clipr::write_clip()
 ```
 
 ### Add Markers
@@ -40,6 +42,14 @@ m$x$calls[[1]]$args |>
 m |> addMarkers(lng=121.5, lat=25.05, popup = "taipei") -> m
 m
 ```
+
+```{r}
+m$x$calls[[2]]$args |> jsonlite::toJSON(auto_unbox = T)
+```
+
+  * popup: click then show information
+  
+  * tooltip: mouse hover then show information
 
 
 ```{r}

@@ -34,7 +34,7 @@ htmltools::div(
 )
 ```
 
-```{js}
+```{js, include=F}
 // initiate map
 m = L.map("map").setView([25.05,121.5],13)
 ```
