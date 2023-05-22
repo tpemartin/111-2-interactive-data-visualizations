@@ -58,7 +58,7 @@ t.addTo(m)
 ```js
 // markers
 var latLng = L.latLng(25.05,121.5); // args[c(1:2)]
-var mk = L.marker(latLng,
+var mk = L.marker(latlng,
 	{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250}) // args[[6]]
 mk.bindPopup("taipei", // args[[7]]
 	{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true}) // args[[12]]
@@ -66,6 +66,27 @@ mk.bindPopup("taipei", // args[[7]]
 
 > `.marker` and `mk.bindPopup` argument values can be obtained in R through
 > `m$x$calls[[2]]$args |> jsonlite::toJSON(auto_unbox=T)
+
+
+## JS constructor/instance
+
+Constructor is a class/function that can create a base object.
+
+  * Constructor is expressed with capital beginning letter (Marker)
+  
+  * Instance is a function call based on a constructor. Always expressed with little case to begin with (maker)
+
+## JS callback
+
+Is a function that is designed to deal with returned information -- returned from user interaction or cloud server response.
+
+```
+function myCallback(e){
+
+....
+}
+
+```
 
 ## leaflet for JS
 

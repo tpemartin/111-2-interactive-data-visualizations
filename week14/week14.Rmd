@@ -36,6 +36,17 @@ m$x$calls[[1]]$args |>
   clipr::write_clip()
 ```
 
+#### econIDV
+
+```{r}
+lf = econIDV::LeafletTools()
+
+m$x$calls[[1]] |>
+  lf$getTileArgsFromCall()
+
+lf$tile$js()
+```
+
 ### Add Markers
 
 ```{r}  
@@ -53,14 +64,8 @@ m$x$calls[[2]]$args |> jsonlite::toJSON(auto_unbox = T)
 
 
 ```{r}
-lf = econIDV::LeafletTools()
 m$x$calls[[2]] |> lf$getMarkerArgsFromCall()
-lf$marker$args
 lf$marker$js()
-
-m$x$calls[[1]] |> lf$getTileArgsFromCall()
-lf$tile$args
-lf$tile$js()
 ```
 
 
