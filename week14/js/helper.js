@@ -42,6 +42,10 @@ function successCallback(position) {
   console.log(position);
   currentLocation = [position.coords.latitude, position.coords.longitude];
   leaflet.currentLocationMarker.remove();
+
+  findCloset5StationFromCurrentLocation(
+    {lat: currentLocation[0], lng: currentLocation[1]}
+  )
   prepareBaseMap(currentLocation);
   
 };
@@ -50,3 +54,32 @@ function errorCallback(error) {
   console.log(error)
 
 };
+function distance(p1, p2) {
+  return Math.sqrt(
+    Math.pow(p1.lat - p2.lat, 2) + Math.pow(p1.lng - p2.lng, 2)
+  );
+}
+function findCloset5StationFromCurrentLocation(currentLocation){
+
+  // compute distance between two positions
+  // var positionX = leaflet.data[0]
+
+  // compute each distance from currentLocation
+  var stationDistances = leaflet.data.map(function(x){
+    return distance(currentLocation,x);
+  });
+
+  // Sort stationDistances
+  //var sorted_stationDistances= stationDistances.sort()
+  var stations = leaflet.data;
+  var min5 = [];
+    for(var i=0; i<5; i++){
+      var minDistance = Math.min(...stationDistances);
+      var minIndex = stationDistances.indexOf(minDistance);
+      min5.push(stations[minIndex]);
+      stationDistances.splice(minIndex,1);
+      stations.splice(minIndex,1);
+    }
+
+leaflet.min5 = min5
+}

@@ -62,3 +62,15 @@ Column {data-width=350}
 htmltools::div(id="map", style="height:100%")
 ```
 
+```{r}
+lf = econIDV::LeafletTools()
+m$x$calls[[2]] -> callx
+callx$args[[6]] |> jsonlite::toJSON(auto_unbox = T) 
+
+```
+
+
+```{js}
+
+```
+
