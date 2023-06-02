@@ -13,7 +13,7 @@ library(leaflet)
 ```
 
 ```{r}
-ubikeMap = readRDS("ubikeMap.Rds")
+ubikeMap = readRDS("../week14/ubikeMap.rds")
 htmltools::tags$script(
   id="youbike-data",
   type="application/json",

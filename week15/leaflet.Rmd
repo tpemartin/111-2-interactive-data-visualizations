@@ -23,7 +23,7 @@ m = m |> leaflet::addCircleMarkers(lng=121.5, lat=25.05)
 m
 ```
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=F}
 m$x$calls
 # leaflet object widget 
 m |> econIDV::LeafletTools() -> lf
