@@ -19,7 +19,11 @@ Column {data-width=650}
 library(leaflet)
 m = leaflet() %>% setView(lng=121.5, lat=25.05, zoom=13) 
 m = m |> addTiles()
-m = m |> leaflet::addCircleMarkers(lng=121.5, lat=25.05)
+m = m |> leaflet::addCircleMarkers(lng=121.5, lat=25.05,
+                                   radius = 4,
+            popup = '<a href="https://www.google.com/maps/@{lat},{lng},15z">click me</a>',
+            # color = ~pal(type),
+            stroke = FALSE, fillOpacity = 0.7)
 m
 ```
 

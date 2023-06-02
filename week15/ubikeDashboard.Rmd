@@ -53,6 +53,8 @@ leaflet(ubikeMap$dataMerged) |>
 m
 ```
 
+
+
 Column {data-width=350}
 -----------------------------------------------------------------------
 
@@ -63,9 +65,4 @@ htmltools::div(id="map", style="height:100%")
 ```
 
 
-
-
-```{js}
-
-```
 
